@@ -530,11 +530,21 @@ def view_transactions():
 
 
 # SALES REPORT
+
 # Daily Sales with Revenue
 def get_daily_sales_with_revenue(selected_date):
     return db.session.query(
-        func.sum(Transaction.quantity * (Product.price - Product.original_price)).label('total_revenue')
-    ).join(Product, Product.id == Transaction.product_id).filter(
+        func.sum(
+            db.case(*(
+                # For products: price - original price multiplied by quantity
+                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
+                # For loading transactions: use amount_loaded
+                (Transaction.is_loading, Transaction.amount_loaded),
+                # For print services: total price
+                (Transaction.print_service_id.isnot(None), Transaction.total_price),
+            ), else_=0)
+        ).label('total_revenue')
+    ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         func.date(Transaction.timestamp) == selected_date.date()  # Compare only the date
     ).scalar() or 0
 
@@ -542,27 +552,56 @@ def get_daily_sales_with_revenue(selected_date):
 # Monthly Sales with Revenue
 def get_monthly_sales_with_revenue(selected_date):
     return db.session.query(
-        func.sum(Transaction.quantity * (Product.price - Product.original_price)).label('total_revenue')
-    ).join(Product, Product.id == Transaction.product_id).filter(
+        func.sum(
+            db.case(*(
+                # For products: price - original price multiplied by quantity
+                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
+                # For loading transactions: use amount_loaded
+                (Transaction.is_loading, Transaction.amount_loaded),
+                # For print services: total price
+                (Transaction.print_service_id.isnot(None), Transaction.total_price),
+            ), else_=0)
+        ).label('total_revenue')
+    ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         extract('month', Transaction.timestamp) == selected_date.month,
         extract('year', Transaction.timestamp) == selected_date.year
     ).scalar() or 0
+
 
 # Quarterly Sales with Revenue
 def get_quarterly_sales_with_revenue(selected_date):
     current_quarter = (selected_date.month - 1) // 3 + 1
     return db.session.query(
-        func.sum(Transaction.quantity * (Product.price - Product.original_price)).label('total_revenue')
-    ).join(Product, Product.id == Transaction.product_id).filter(
+        func.sum(
+            db.case(*(
+                # For products: price - original price multiplied by quantity
+                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
+                # For loading transactions: use amount_loaded
+                (Transaction.is_loading, Transaction.amount_loaded),
+                # For print services: total price
+                (Transaction.print_service_id.isnot(None), Transaction.total_price),
+            ), else_=0)
+        ).label('total_revenue')
+    ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
         extract('year', Transaction.timestamp) == selected_date.year
     ).scalar() or 0
 
+
 # Yearly Sales with Revenue
 def get_yearly_sales_with_revenue(selected_date):
     return db.session.query(
-        func.sum(Transaction.quantity * (Product.price - Product.original_price)).label('total_revenue')
-    ).join(Product, Product.id == Transaction.product_id).filter(
+        func.sum(
+            db.case(*(
+                # For products: price - original price multiplied by quantity
+                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
+                # For loading transactions: use amount_loaded
+                (Transaction.is_loading, Transaction.amount_loaded),
+                # For print services: total price
+                (Transaction.print_service_id.isnot(None), Transaction.total_price),
+            ), else_=0)
+        ).label('total_revenue')
+    ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         extract('year', Transaction.timestamp) == selected_date.year
     ).scalar() or 0
 
@@ -851,6 +890,8 @@ def delete_category(category_id):
     return redirect(url_for('manage_categories'))
 
 #DASHBOARD
+#na update na i count lang ang transaction, maybe katoong isa kay gi apil ug count kung pila 
+# kada transaction like sas products nahalin kay 20 tapos ma add sa transaction table ana
 @app.route('/another_dashboard')
 def another_dashboard():
     total_products = Product.query.count()
@@ -863,14 +904,15 @@ def another_dashboard():
     # Fetch low stock products (stock < 5, adjust as needed)
     low_stock_products = db.session.query(Product.id, Product.name, Product.stock).filter(Product.stock < 5).all()
 
-    # Fetch data
+    # Fetch daily transaction count (instead of summing quantities)
     sales_data = db.session.query(
         func.date(Transaction.timestamp),
-        func.sum(Transaction.quantity)
+        func.count(Transaction.id)  # Count the total number of transactions for each day
     ).filter(
         Transaction.timestamp >= thirty_days_ago
     ).group_by(func.date(Transaction.timestamp)).all()
 
+    # Fetch revenue data (sum total_price for all types)
     revenue_data = db.session.query(
         func.date(Transaction.timestamp),
         func.sum(Transaction.total_price)
@@ -878,10 +920,17 @@ def another_dashboard():
         Transaction.timestamp >= thirty_days_ago
     ).group_by(func.date(Transaction.timestamp)).all()
 
+    # Fetch profit data (for product: price - cost, for others: total_price)
     profit_data = db.session.query(
         func.date(Transaction.timestamp),
-        func.sum(Transaction.total_price - (Transaction.quantity * Product.original_price))
-    ).join(Product).filter(
+        func.sum(
+            db.case(*(
+                    (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),
+            ),
+                else_=Transaction.total_price
+            )
+        )
+    ).join(Product, isouter=True).filter(
         Transaction.timestamp >= thirty_days_ago
     ).group_by(func.date(Transaction.timestamp)).all()
 
@@ -901,30 +950,21 @@ def another_dashboard():
         if isinstance(sale_date, str):
             sale_date = datetime.strptime(sale_date, '%Y-%m-%d').date()
 
-        # Calculate day_index
         day_index = (sale_date - thirty_days_ago).days
-
-        # Adjust day_index if it equals 30 to fit in the 0-29 range
         if day_index == 30:
             day_index = 29
 
-        print(f"Sale Date: {sale_date}, Thirty Days Ago: {thirty_days_ago}, Day Index: {day_index}")
-
         if 0 <= day_index < 30:
-            daily_sales_data[day_index] = sale[1]
+            daily_sales_data[day_index] = sale[1]  # This now holds the transaction count
 
-    # Repeat the same for revenue_data and profit_data
     for revenue in revenue_data:
         revenue_date = revenue[0]
         if isinstance(revenue_date, str):
             revenue_date = datetime.strptime(revenue_date, '%Y-%m-%d').date()
 
         day_index = (revenue_date - thirty_days_ago).days
-
         if day_index == 30:
             day_index = 29
-
-        print(f"Revenue Date: {revenue_date}, Thirty Days Ago: {thirty_days_ago}, Day Index: {day_index}")
 
         if 0 <= day_index < 30:
             daily_revenue_data[day_index] = revenue[1]
@@ -935,11 +975,8 @@ def another_dashboard():
             profit_date = datetime.strptime(profit_date, '%Y-%m-%d').date()
 
         day_index = (profit_date - thirty_days_ago).days
-
         if day_index == 30:
             day_index = 29
-
-        print(f"Profit Date: {profit_date}, Thirty Days Ago: {thirty_days_ago}, Day Index: {day_index}")
 
         if 0 <= day_index < 30:
             daily_profit_data[day_index] = profit[1]
@@ -962,6 +999,8 @@ def another_dashboard():
         daily_revenue_data=daily_revenue_data,
         daily_profit_data=daily_profit_data
     )
+
+
 
 #Dashboard v2
 @app.route('/api/chart-data')
