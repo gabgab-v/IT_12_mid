@@ -1,0 +1,51 @@
+<!-- sales_report.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Sales Report</h1>
+        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        <!-- Filter Form -->
+        <form method="GET" action="{{ url_for('sales_report') }}" class="mb-4">
+            <div class="form-row align-items-center">
+                <div class="col-md-4 mb-3">
+                    <label for="filter_type">Filter by:</label>
+                    <select name="filter_type" id="filter_type" class="form-control">
+                        <option value="daily">Daily</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="filter_date">Choose Date:</label>
+                    <input type="date" name="filter_date" id="filter_date" class="form-control" />
+                </div>
+                <div class="col-md-4 mb-3 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-block">Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display Results -->
+        <div id="results" class="card">
+            <div class="card-body">
+                <h2 class="card-title">{{ filter_type.capitalize() }} Sales Profit</h2>
+                <p class="card-text">Total Revenue: <strong>{{ total_revenue }} PHP</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

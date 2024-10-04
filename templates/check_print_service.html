@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Print Service</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Check Print Service</h1>
+        <form action="{{ url_for('checkout_print_service') }}" method="POST">
+            <div class="form-group">
+                <label for="service_id">Print Service</label>
+                <select name="service_id" class="form-control" required>
+                    {% for service in print_services %}
+                        <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <div class="form-group">
+                <label for="pages">Number of Pages</label>
+                <input type="number" name="pages" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="paper_type_id">Paper Type</label>
+                <select name="paper_type_id" class="form-control" required>
+                    {% for paper in paper_types %}
+                        <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <div class="form-group">
+                <label for="back_to_back">Back-to-Back Printing?</label>
+                <input type="checkbox" name="back_to_back" value="1">
+            </div>
+        
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

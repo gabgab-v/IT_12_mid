@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Manage Products</h1>
+        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        <a href="{{ url_for('add_product') }}" class="btn btn-secondary mb-3">Add Items</a>
+        <a href="{{ url_for('manage_archived_products') }}" class="btn btn-secondary mb-3">View Archived Products</a>
+        <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary mb-3">Manage Categories</a>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                    <th>Store Price</th>
+                    <th>Original Price</th>
+                    <th>Purchase Location</th>
+                    <th>Expiration Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through products from the database -->
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.category.name }}</td>
+                    <td>{{ product.stock }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>{{ product.original_price }}</td>
+                    <td>{{ product.purchase_location }}</td>
+                    <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
+                    <td>
+                        <!-- Edit Product -->
+                        <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">Edit</a>
+                        
+                        <!-- Remove Product -->
+                        <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
+                        </form>
+
+                        <!-- Reduce Stock Form -->
+                        <form action="{{ url_for('reduce_stock', product_id=product.id) }}" method="POST" style="display: inline;">
+                            <input type="number" name="reduce_quantity" min="1" max="{{ product.stock }}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
+                            <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
+                        </form>
+
+                        <!-- Restock Button -->
+                        <a href="{{ url_for('restock_product', product_id=product.id) }}" class="btn btn-primary btn-sm">Restock</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

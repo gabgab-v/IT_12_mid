@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier - Add Loading Service</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .cashier-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        #balance_display {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        #total_price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .btn-primary {
+            width: 100%;
+            font-size: 1.2rem;
+        }
+    </style>
+    <script>
+        // JavaScript to dynamically show the balance for Normal Load or GCash
+        function updateBalance() {
+            const serviceProvider = document.getElementById('service_provider').value;
+            const normalBalance = {{ load_balance.normal_load }};
+            const gcashBalance = {{ load_balance.gcash_balance }};
+            
+            const balanceDisplay = document.getElementById('balance_display');
+            if (serviceProvider === 'GCash') {
+                balanceDisplay.innerHTML = `Current GCash Balance: PHP ${gcashBalance.toFixed(2)}`;
+            } else {
+                balanceDisplay.innerHTML = `Current Normal Load Balance: PHP ${normalBalance.toFixed(2)}`;
+            }
+        }
+
+        // Calculate the total price with an additional fee (e.g., 5% for transactions)
+        function calculateTotal() {
+            const amountLoaded = parseFloat(document.getElementById('amount_loaded').value) || 0;
+            const feePercentage = 0.05;  // 5% transaction fee
+            const totalPrice = amountLoaded + (amountLoaded * feePercentage);
+            document.getElementById('total_price').value = `PHP ${totalPrice.toFixed(2)}`;
+        }
+
+        window.onload = function() {
+            updateBalance();  // Set balance on page load
+        };
+    </script>
+</head>
+<body>
+    <div class="cashier-container">
+        <h1 class="text-center mb-4">Cashier - Add Loading Service</h1>
+
+        <!-- Display balance based on selected service provider -->
+        <div id="balance_display" class="text-center mb-3"></div>
+
+        <form action="{{ url_for('add_loading_service') }}" method="POST">
+            <!-- Amount loaded input -->
+            <div class="form-group">
+                <label for="amount_loaded">Amount Loaded</label>
+                <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" step="0.01" placeholder="Enter amount e.g. 100.00" required oninput="calculateTotal()">
+            </div>
+
+            <!-- Service provider selection (this will affect the load balance) -->
+            <div class="form-group">
+                <label for="service_provider">Service Provider</label>
+                <select class="form-control" id="service_provider" name="service_provider" onchange="updateBalance()" required>
+                    <option value="Globe">Globe</option>
+                    <option value="Smart">Smart</option>
+                    <option value="GCash">GCash</option>
+                    <option value="PayMaya">PayMaya</option>
+                </select>
+            </div>
+
+            <!-- Restock ID for tracking restock events -->
+            <div class="form-group">
+                <label for="restock_id">Restock ID (optional)</label>
+                <select class="form-control" id="restock_id" name="restock_id">
+                    {% for restock in restock_events %}
+                    <option value="{{ restock.id }}">
+                        {{ restock.id }} - {{ restock.restock_location }} ({{ restock.restock_date }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Total price (including additional transaction fees) -->
+            <div class="form-group">
+                <label for="total_price">Total Price (with transaction fee)</label>
+                <input type="text" class="form-control" id="total_price" name="total_price" readonly>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Process Transaction</button>
+        </form>        
+    </div>
+</body>
+</html>

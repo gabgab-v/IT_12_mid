@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Transaction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Add New Transaction</h1>
+        <form action="{{ url_for('add_transaction') }}" method="POST">
+            <div class="form-group">
+                <label for="amount_loaded">Amount Loaded</label>
+                <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" required>
+            </div>
+            <div class="form-group">
+                <label for="service_provider">Service Provider</label>
+                <input type="text" class="form-control" id="service_provider" name="service_provider" required>
+            </div>
+            
+            <!-- Transaction Type Dropdown -->
+            <div class="form-group">
+                <label for="transaction_type">Transaction Type</label>
+                <select class="form-control" id="transaction_type" name="transaction_type_id" required>
+                    {% for transaction_type in transaction_types %}
+                    <option value="{{ transaction_type.id }}">{{ transaction_type.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Location Dropdown -->
+            <div class="form-group">
+                <label for="location">Location</label>
+                <select class="form-control" id="location" name="location_id" required>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}">{{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Restock Event Dropdown -->
+            <div class="form-group">
+                <label for="restock">Restock Event</label>
+                <select class="form-control" id="restock" name="restock_id" required>
+                    {% for restock in restocks %}
+                    <option value="{{ restock.id }}">{{ restock.restock_location }} ({{ restock.restock_date }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Transaction</button>
+        </form>
+    </div>
+</body>
+</html>

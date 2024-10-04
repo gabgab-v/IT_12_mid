@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Loading Restock Events</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Manage Loading Restock Events</h1>
+        <a href="{{ url_for('add_loading_restock') }}" class="btn btn-primary mb-3">Add Loading Restock Event</a>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Restock Amount</th>
+                    <th>Amount Spent</th>
+                    <th>Restock Location</th>
+                    <th>Restock Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for restock in restock_events %}
+                <tr>
+                    <td>{{ restock.id }}</td>
+                    <td>{{ restock.restock_amount }}</td>
+                    <td>{{ restock.amount_spent }}</td>
+                    <td>{{ restock.restock_location }}</td>
+                    <td>{{ restock.restock_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

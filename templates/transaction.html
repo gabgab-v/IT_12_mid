@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .transaction-panel, .total-panel {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 48%;
+        }
+
+        .transaction-panel h3, .total-panel h3 {
+            text-align: center;
+        }
+
+        .product-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .product-list th, .product-list td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            color: green;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 5px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="transaction-panel">
+        <h3>Product List</h3>
+        <table class="product-list">
+            <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+            </thead>
+            <tbody id="productTableBody">
+            <!-- Filled dynamically by JS -->
+            </tbody>
+        </table>
+
+        <div class="action-buttons">
+            <form id="productForm" method="POST">
+                <label for="product_id">Enter SKU or Select Function:</label>
+                <input type="text" id="product_id" name="product_id" placeholder="Enter SKU">
+
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" placeholder="Enter Quantity" value="1">
+
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="total-panel">
+        <h3>Total</h3>
+        <p>Units: <span id="unitsCount">0</span></p>
+        <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
+        <p>Tax Amount: <span id="taxAmount">P 0.00</span></p>
+        <p>Tendered: <span id="tenderedAmount">P 0.00</span></p>
+
+        <div class="action-buttons">
+            <button id="checkoutButton">Checkout</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let totalAmount = 0;
+    let unitsCount = 0;
+
+    document.getElementById('productForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const productId = document.getElementById('product_id').value;
+        const quantity = parseInt(document.getElementById('quantity').value);
+
+        // Replace this with actual product fetch logic
+        const product = { 
+            sku: productId, 
+            description: "Sample Product", 
+            price: 100 
+        }; 
+
+        const totalPrice = product.price * quantity;
+        
+        // Update product list table
+        const productTable = document.getElementById('productTableBody');
+        const newRow = productTable.insertRow();
+        newRow.innerHTML = `
+            <td>${product.sku}</td>
+            <td>${product.description}</td>
+            <td>${quantity}</td>
+            <td>P ${product.price.toFixed(2)}</td>
+            <td>P ${totalPrice.toFixed(2)}</td>
+        `;
+
+        // Update totals
+        totalAmount += totalPrice;
+        unitsCount += quantity;
+
+        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+        document.getElementById('unitsCount').textContent = unitsCount;
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Loading Services</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Manage Loading Services</h1>
+        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        <a href="{{ url_for('add_loading_service') }}" class="btn btn-secondary mb-3">Add Loading Service</a>
+        <a href="{{ url_for('add_location') }}" class="btn btn-primary">Manage Locations</a>
+        <a href="{{ url_for('add_transaction_type') }}" class="btn btn-primary">Manage Transaction Types</a>
+
+        <!-- Table of Restocks -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Restock Amount</th>
+                    <th>Restock Location</th>
+                    <th>Amount Spent</th>
+                    <th>Restock Type</th>
+                    <th>Date/Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for restock in restocks %}
+                <tr>
+                    <td>{{ restock.id }}</td>
+                    <td>{{ restock.restock_amount }}</td>
+                    <td>{{ restock.restock_location }}</td>
+                    <td>{{ restock.amount_spent }}</td>
+                    <td>{{ restock.inventory_type }}</td>
+                    <td>{{ restock.restock_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+</body>
+</html>

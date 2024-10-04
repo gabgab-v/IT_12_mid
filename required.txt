@@ -1,0 +1,1 @@
+pip install Flask Flask-SQLAlchemy Flask-Bcrypt Flask-Login SQLAlchemy Flask-Migrate Flask-WTF Flask-CORS

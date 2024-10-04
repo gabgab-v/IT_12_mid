@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Restock Events</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Manage Restock Events</h1>
+
+        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addRestockModal">Add Restock Event</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Restock Amount</th>
+                    <th>Amount Spent</th>
+                    <th>Restock Location</th>
+                    <th>Inventory Type</th>
+                    <th>Restock Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for restock in restock_events %}
+                <tr>
+                    <td>{{ restock.id }}</td>
+                    <td>{{ restock.product.name if restock.product else 'N/A' }}</td>
+                    <td>{{ restock.product.category.name if restock.product and restock.product.category else 'N/A' }}</td>
+                    <td>{{ restock.restock_amount }}</td>
+                    <td>{{ restock.amount_spent }}</td>
+                    <td>{{ restock.restock_location }}</td>
+                    <td>{{ restock.inventory_type }}</td>
+                    <td>{{ restock.restock_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal for Adding Restock -->
+    <div class="modal fade" id="addRestockModal" tabindex="-1" role="dialog" aria-labelledby="addRestockModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addRestockModalLabel">Add New Restock</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('add_restock') }}" method="POST">
+                    <div class="modal-body">
+                        <h5>Restock Information</h5>
+
+                        <div class="form-group">
+                            <label for="restock_type">Restock Type</label>
+                            <select class="form-control" id="restock_type" name="restock_type" required onchange="showInventoryFields()">
+                                <option value="">Select Restock Type</option>
+                                <option value="ink">Ink</option>
+                                <option value="paper">Paper</option>
+                                <option value="load">Load</option>
+                                <option value="gcash">Gcash</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="restock_amount">Restock Amount</label>
+                            <input type="number" class="form-control" id="restock_amount" name="restock_amount" placeholder="Enter restock amount" required>
+                        </div>
+
+                        <div class="form-group" id="restock-location-field">
+                            <label for="restock_location">Restock Location</label>
+                            <input type="text" class="form-control" id="restock_location" name="restock_location" placeholder="Enter restock location" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="amount_spent">Amount Spent on Restock</label>
+                            <input type="number" class="form-control" id="amount_spent" name="amount_spent" placeholder="Enter amount spent on restock" required>
+                        </div>
+
+                        <!-- Ink Type Selection (hidden by default) -->
+                        <div class="form-group" id="ink-type-field" style="display: none;">
+                            <label for="ink_type_id">Select Ink Type</label>
+                            <select class="form-control" id="ink_type_id" name="ink_type_id">
+                                {% for ink in ink_inventory %}
+                                    <option value="{{ ink.id }}">{{ ink.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Paper Type Selection -->
+                        <div class="form-group" id="paper-type-field" style="display: none;">
+                            <label for="paper_type_id">Select Paper Type</label>
+                            <select class="form-control" id="paper_type_id" name="paper_type_id" required>
+                                {% for paper in paper_types %}
+                                    <option value="{{ paper.id }}">{{ paper.size }} - {{ paper.description }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Restock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <script>
+        function showInventoryFields() {
+            const restockType = document.getElementById('restock_type').value;
+            const inkField = document.getElementById('ink-type-field');
+            const paperField = document.getElementById('paper-type-field');
+
+            // Hide all fields initially
+            inkField.style.display = 'none';
+            paperField.style.display = 'none';
+
+            if (restockType === 'ink') {
+                inkField.style.display = 'block';
+            } else if (restockType === 'paper') {
+                paperField.style.display = 'block';
+            }
+        }
+    </script>
+
+</body>
+</html>

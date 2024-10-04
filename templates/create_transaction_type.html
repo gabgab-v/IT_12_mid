@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Add Transaction Type</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Add New Transaction Type</h2>
+        <form method="POST" action="{{ url_for('add_transaction_type') }}">
+            <div class="form-group">
+                <label for="transaction_type_name">Transaction Type Name:</label>
+                <input type="text" id="transaction_type_name" name="transaction_type_name" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Add Transaction Type</button>
+        </form>
+
+        <h3 class="mt-5">Existing Transaction Types</h3>
+        <ul>
+            {% for transaction_type in transaction_types %}
+            <li>{{ transaction_type.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

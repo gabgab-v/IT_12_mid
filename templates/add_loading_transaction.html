@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Loading Transaction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Add Loading Transaction</h1>
+        <a href="{{ url_for('manage_loading_services') }}" class="btn btn-secondary mb-3">Back to Loading Services</a>
+
+        <form method="POST" action="{{ url_for('add_loading_transaction') }}">
+            <div class="form-group">
+                <label for="amount_loaded">Amount Loaded</label>
+                <input type="number" step="0.01" class="form-control" id="amount_loaded" name="amount_loaded" required>
+            </div>
+
+            <div class="form-group">
+                <label for="service_provider">Service Provider</label>
+                <input type="text" class="form-control" id="service_provider" name="service_provider" required>
+            </div>
+
+            <div class="form-group">
+                <label for="transaction_type_id">Transaction Type</label>
+                <select class="form-control" id="transaction_type_id" name="transaction_type_id" required>
+                    {% for type in transaction_types %}
+                    <option value="{{ type.id }}">{{ type.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Transaction</button>
+        </form>
+    </div>
+</body>
+</html>

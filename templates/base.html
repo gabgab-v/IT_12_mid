@@ -1,0 +1,142 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <!-- Include Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .sidebar {
+            transition: width 0.3s ease, opacity 0.3s ease;
+            width: 16rem;
+            opacity: 1;
+        }
+        .collapsed-sidebar {
+            width: 60px;
+        }
+        .content {
+            transition: margin-left 0.3s ease;
+            margin-left: 16rem;
+        }
+        .full-width-content {
+            margin-left: 60px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar a {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            transition: padding 0.3s ease;
+        }
+        .toggle-btn {
+            z-index: 30;
+            right: -12px;
+            top: 16px;
+            width: 40px;
+            height: 40px;
+            background-color: #4a5568;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: absolute;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar bg-gray-800 text-white fixed h-full">
+        <div class="flex items-center justify-between px-4 py-4 bg-gray-900">
+            <span id="sidebar-title" class="sidebar-text text-lg font-bold">Admin</span>
+        </div>
+        <nav id="sidebar-links" class="flex flex-col mt-4 space-y-4">
+            <a href="{{ url_for('manage_products') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-box"></i>
+                <span class="sidebar-text ml-3">Manage Products</span>
+            </a>
+            <a href="{{ url_for('manage_loading_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-users"></i>
+                <span class="sidebar-text ml-3">Manage Loading Services</span>
+            </a>
+            <a href="{{ url_for('manage_printing_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="sidebar-text ml-3">Manage Printing Services</span>
+            </a>
+            <a href="{{ url_for('manage_restock_events') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-users"></i>
+                <span class="sidebar-text ml-3">Restock</span>
+            </a>
+            <a href="{{ url_for('cashier') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-users"></i>
+                <span class="sidebar-text ml-3">Cashier</span>
+            </a>
+            <a href="{{ url_for('view_transactions') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-file-alt"></i>
+                <span class="sidebar-text ml-3">View Transactions</span>
+            </a>
+            <a href="{{ url_for('sales_report') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-chart-line"></i>
+                <span class="sidebar-text ml-3">Sales Report</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="sidebar-text ml-3">Logout</span>
+            </a>
+        </nav>
+        <div id="toggle-btn" class="toggle-btn" onclick="toggleSidebar()">☰</div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div id="content" class="content flex-grow p-6 bg-gray-100">
+        {% block content %} <!-- Placeholder for extending pages' content -->
+        {% endblock %}
+    </div>
+
+    <!-- Toggle Sidebar Script -->
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const sidebarLinks = document.querySelectorAll('#sidebar-links a .sidebar-text');
+        const sidebarTitle = document.getElementById('sidebar-title');
+    
+        // Save original text content
+        let originalText = [];
+        sidebarLinks.forEach(link => {
+            originalText.push(link.textContent);
+        });
+    
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed-sidebar');
+            content.classList.toggle('full-width-content');
+    
+            if (sidebar.classList.contains('collapsed-sidebar')) {
+                // Collapse: Remove text
+                sidebarTitle.textContent = ''; // Remove title
+                sidebarLinks.forEach(link => link.textContent = ''); // Remove link text
+            } else {
+                // Expand: Restore text
+                sidebarTitle.textContent = 'Admin'; // Restore title
+                sidebarLinks.forEach((link, index) => {
+                    link.textContent = originalText[index]; // Restore link text
+                });
+            }
+        }
+    </script>
+
+    {% block scripts %}
+    <!-- Placeholder for extending pages' specific scripts -->
+    {% endblock %}
+
+</body>
+</html>

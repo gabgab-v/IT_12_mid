@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Loading Restock Event</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Add Loading Restock Event</h1>
+        <form action="{{ url_for('add_loading_restock') }}" method="POST">
+            <div class="form-group">
+                <label for="restock_amount">Restock Amount</label>
+                <input type="number" step="0.01" class="form-control" id="restock_amount" name="restock_amount" required>
+            </div>
+            <div class="form-group">
+                <label for="amount_spent">Amount Spent</label>
+                <input type="number" step="0.01" class="form-control" id="amount_spent" name="amount_spent" required>
+            </div>
+            <div class="form-group">
+                <label for="restock_location">Restock Location</label>
+                <input type="text" class="form-control" id="restock_location" name="restock_location" required>
+            </div>
+
+            <!-- Specify that this restock is related to loading services -->
+            <input type="hidden" name="inventory_type" value="loading">
+
+            <button type="submit" class="btn btn-primary">Add Loading Restock</button>
+        </form>
+    </div>
+</body>
+</html>

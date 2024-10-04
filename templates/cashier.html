@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Cashier System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .transaction-panel, .total-panel {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 48%;
+        }
+
+        .transaction-panel h3, .total-panel h3 {
+            text-align: center;
+        }
+
+        .product-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .product-list th, .product-list td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            color: green;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        input[type="number"], select {
+            padding: 5px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    <h1>Cashier</h1>
+    <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+</div>
+<div class="container">
+    <div class="transaction-panel">
+        <h3>Product List</h3>
+        <table class="product-list">
+            <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+            </tr>
+            </thead>
+            <tbody id="productTableBody">
+            <!-- Filled dynamically by JS -->
+            </tbody>
+        </table>
+
+        <div class="action-buttons">
+            <form id="productForm" method="POST">
+                <label for="product_id">Select Product:</label>
+                <select id="product_id" name="product_id">
+                    {% for product in products %}
+                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock }}">
+                        {{ product.name }} (P {{ product.price }}) - Stock: {{ product.stock }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" placeholder="Enter Quantity" value="1" min="1">
+
+                <button type="submit">Add Product</button>
+            </form>
+
+            <!-- New Button to Add Print Service Transaction -->
+            <!-- Add Print Service Button -->
+            <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#addPrintServiceModal">
+                Add Print Service
+            </button>
+
+            <!-- Button to Add Loading Service -->
+            <button type="button" class="btn btn-warning mt-3" data-bs-toggle="modal" data-bs-target="#addLoadingServiceModal">
+                Add Loading Service
+            </button>
+        </div>
+    </div>
+
+    <!-- Print Service Modal -->
+    <div class="modal fade" id="addPrintServiceModal" tabindex="-1" aria-labelledby="addPrintServiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="printServiceForm" method="POST" action="{{ url_for('checkout_print_service') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addPrintServiceModalLabel">Add Print Service</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Input fields for Print Service -->
+                        <div class="form-group">
+                            <label for="service_id">Print Service</label>
+                            <select id="service_id" name="service_id" class="form-control" required>
+                                {% for service in print_services %}
+                                    <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pages" class="mt-3">Number of Pages</label>
+                            <input type="number" id="pages" name="pages" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="paper_type_id" class="mt-3">Paper Type</label>
+                            <select id="paper_type_id" name="paper_type_id" class="form-control" required>
+                                {% for paper in paper_types %}
+                                    <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="back_to_back" class="mt-3">Back-to-Back Printing?</label>
+                            <input type="checkbox" id="back_to_back" name="back_to_back" value="1">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add Print Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+        <!-- Loading Service Modal -->
+        <div class="modal fade" id="addLoadingServiceModal" tabindex="-1" aria-labelledby="addLoadingServiceModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    
+                    <div id="balance_display" class="text-center mb-3"></div>
+                    
+                    <form id="loadingServiceForm" method="POST" action="{{ url_for('add_loading_service') }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addLoadingServiceModalLabel">Add Loading Service</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Amount loaded input -->
+                            <div class="form-group">
+                                <label for="amount_loaded">Amount Loaded</label>
+                                <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" step="0.01" placeholder="Enter amount e.g. 100.00" required oninput="calculateTotal()">
+                            </div>
+
+                            <!-- Service provider selection (this will affect the load balance) -->
+                            <div class="form-group">
+                                <label for="service_provider">Service Provider</label>
+                                <select class="form-control" id="service_provider" name="service_provider" onchange="updateBalance()" required>
+                                    <option value="Globe">Globe</option>
+                                    <option value="Smart">Smart</option>
+                                    <option value="GCash">GCash</option>
+                                    <option value="PayMaya">PayMaya</option>
+                                </select>
+                            </div>
+
+                            <!-- Total price (including additional transaction fees) -->
+                            <div class="form-group">
+                                <label for="total_price">Total Price (with transaction fee)</label>
+                                <input type="text" class="form-control" id="total_price" name="total_price" readonly>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" id="processTransactionBtn">Process Transaction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+
+    <div class="total-panel">
+        <h3>Total</h3>
+        <p>Units: <span id="unitsCount">0</span></p>
+        <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
+    
+        <div class="action-buttons">
+            <!-- Unified Checkout Form -->
+            <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
+                <!-- Hidden inputs dynamically added by JS for products, print services, and load transactions -->
+                <button type="submit" id="checkoutButton">Checkout</button>
+            </form>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+    let totalAmount = 0;
+    let unitsCount = 0;
+
+    // Add product to the cart
+    document.getElementById('productForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const productSelect = document.getElementById('product_id');
+        const stock = parseInt(productSelect.options[productSelect.selectedIndex].getAttribute('data-stock'));
+        const quantity = parseInt(document.getElementById('quantity').value);
+
+        if (quantity > stock) {
+            alert('Insufficient stock for this product!');
+            return;
+        }
+
+        // Get product details
+        const productId = productSelect.value;
+        const productName = productSelect.options[productSelect.selectedIndex].text.split(" (")[0];
+        const productPrice = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-price'));
+        const totalPrice = productPrice * quantity;
+
+        // Add product details to the table
+        const productTable = document.getElementById('productTableBody');
+        const newRow = productTable.insertRow();
+        newRow.innerHTML = `
+            <td>${productName}</td>
+            <td>P ${productPrice.toFixed(2)}</td>
+            <td>${quantity}</td>
+            <td>P ${totalPrice.toFixed(2)}</td>
+        `;
+
+        // Update totals
+        totalAmount += totalPrice;
+        unitsCount += quantity;
+
+        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+        document.getElementById('unitsCount').textContent = unitsCount;
+
+        // Add product details to hidden checkout form
+        const checkoutForm = document.getElementById('checkoutForm');
+        const productInput = document.createElement('input');
+        productInput.type = 'hidden';
+        productInput.name = 'product_ids[]';
+        productInput.value = productId;
+        checkoutForm.appendChild(productInput);
+
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'hidden';
+        quantityInput.name = 'quantities[]';
+        quantityInput.value = quantity;
+        checkoutForm.appendChild(quantityInput);
+    });
+
+    document.getElementById('printServiceForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        // Get selected print service details
+        const serviceId = document.getElementById('service_id').value;
+        const serviceName = document.getElementById('service_id').options[document.getElementById('service_id').selectedIndex].text;
+        const pages = parseInt(document.getElementById('pages').value);
+        const paperTypeId = document.getElementById('paper_type_id').value;
+        const paperTypeName = document.getElementById('paper_type_id').options[document.getElementById('paper_type_id').selectedIndex].text;
+        const backToBack = document.getElementById('back_to_back').checked ? 'Yes' : 'No';
+
+        // Calculate price
+        const servicePrice = parseFloat(serviceName.split('P')[1].split(' ')[0]);
+        const totalPrice = servicePrice * pages;
+
+        // Add to product list
+        const productTable = document.getElementById('productTableBody');
+        const newRow = productTable.insertRow();
+        newRow.innerHTML = `
+            <td>Print Service - ${serviceName} (${paperTypeName}, Back-to-Back: ${backToBack})</td>
+            <td>P ${servicePrice.toFixed(2)}</td>
+            <td>${pages}</td>
+            <td>P ${totalPrice.toFixed(2)}</td>
+        `;
+
+        // Update totals
+        totalAmount += totalPrice;
+        unitsCount += pages;
+
+        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+        document.getElementById('unitsCount').textContent = unitsCount;
+
+        // Add print service details to hidden checkout form
+        const checkoutForm = document.getElementById('checkoutForm');
+
+        const serviceInput = document.createElement('input');
+        serviceInput.type = 'hidden';
+        serviceInput.name = 'service_ids[]';
+        serviceInput.value = serviceId;
+        checkoutForm.appendChild(serviceInput);
+
+        const pagesInput = document.createElement('input');
+        pagesInput.type = 'hidden';
+        pagesInput.name = 'pages[]';
+        pagesInput.value = pages;
+        checkoutForm.appendChild(pagesInput);
+
+        const paperTypeInput = document.createElement('input');
+        paperTypeInput.type = 'hidden';
+        paperTypeInput.name = 'paper_type_ids[]';
+        paperTypeInput.value = paperTypeId;
+        checkoutForm.appendChild(paperTypeInput);
+
+        const backToBackInput = document.createElement('input');
+        backToBackInput.type = 'hidden';
+        backToBackInput.name = 'back_to_back[]';
+        backToBackInput.value = backToBack;
+        checkoutForm.appendChild(backToBackInput);
+
+        // Close the modal
+        const printServiceModal = bootstrap.Modal.getInstance(document.getElementById('addPrintServiceModal'));
+        printServiceModal.hide();
+    });
+
+    document.getElementById('loadingServiceForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const serviceProvider = document.getElementById('service_provider').value;
+    const amountLoaded = parseFloat(document.getElementById('amount_loaded').value);
+    const totalPrice = parseFloat(document.getElementById('total_price').value);
+
+    // Debug: Log the captured values
+    console.log('Submitting Loading Service:');
+    console.log('Service Provider:', serviceProvider);
+    console.log('Amount Loaded:', amountLoaded);
+    console.log('Total Price:', totalPrice);
+
+    // Validate that amountLoaded and totalPrice are not null or undefined
+    if (isNaN(amountLoaded) || isNaN(totalPrice)) {
+        alert("Invalid loading amount or total price!");
+        return;
+    }
+
+    // Add loading service details to the table
+    const productTable = document.getElementById('productTableBody');
+    const newRow = productTable.insertRow();
+    newRow.innerHTML = `
+        <td>Loading Service - ${serviceProvider}</td>
+        <td>P ${amountLoaded.toFixed(2)}</td>
+        <td>1</td>
+        <td>P ${totalPrice.toFixed(2)}</td>
+    `;
+
+    // Update totals
+    totalAmount += totalPrice;
+    unitsCount += 1;
+
+    document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+    document.getElementById('unitsCount').textContent = unitsCount;
+
+    // Add loading service details to the hidden checkout form
+    const checkoutForm = document.getElementById('checkoutForm');
+
+    const serviceProviderInput = document.createElement('input');
+    serviceProviderInput.type = 'hidden';
+    serviceProviderInput.name = 'service_providers[]';
+    serviceProviderInput.value = serviceProvider;
+    checkoutForm.appendChild(serviceProviderInput);
+
+    const amountLoadedInput = document.createElement('input');
+    amountLoadedInput.type = 'hidden';
+    amountLoadedInput.name = 'amount_loaded[]';
+    amountLoadedInput.value = amountLoaded;
+    checkoutForm.appendChild(amountLoadedInput);
+
+    const totalPriceInput = document.createElement('input');
+    totalPriceInput.type = 'hidden';
+    totalPriceInput.name = 'total_price[]';
+    totalPriceInput.value = totalPrice;
+    checkoutForm.appendChild(totalPriceInput);
+
+    // Close the modal
+    const loadingServiceModal = bootstrap.Modal.getInstance(document.getElementById('addLoadingServiceModal'));
+    loadingServiceModal.hide();
+});
+
+</script>
+<script>
+    // JavaScript for the loading service modal
+    function updateBalance() {
+        const serviceProvider = document.getElementById('service_provider').value;
+        const normalBalance = {{ load_balance.normal_load }};
+        const gcashBalance = {{ load_balance.gcash_balance }};
+        
+        const balanceDisplay = document.getElementById('balance_display');
+        if (serviceProvider === 'GCash') {
+            balanceDisplay.innerHTML = `Current GCash Balance: PHP ${gcashBalance.toFixed(2)}`;
+        } else {
+            balanceDisplay.innerHTML = `Current Normal Load Balance: PHP ${normalBalance.toFixed(2)}`;
+        }
+    }
+
+    function calculateTotal() {
+        const amountLoaded = parseFloat(document.getElementById('amount_loaded').value) || 0;
+        const feePercentage = 0.05;
+        let totalPrice;
+
+        if (amountLoaded >= 1000) {
+            totalPrice = amountLoaded + (amountLoaded * feePercentage);
+        } else {
+            totalPrice = amountLoaded + 5;
+        }
+
+        document.getElementById('total_price').value = totalPrice.toFixed(2);
+    }
+</script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Transactions</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">View All Transactions</h1>
+        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+        <!-- Product Transactions Table -->
+        <h3 class="text-center">Product Transactions</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in product_transactions %}
+                <tr>
+                    <td>{{ transaction.id }}</td>
+                    <td>{% if transaction.product %}{{ transaction.product.name }}{% else %}No Product{% endif %}</td>
+                    <td>{{ transaction.quantity }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Loading Transactions Table -->
+        <h3 class="text-center mt-5">Loading Transactions</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Service Provider</th>
+                    <th>Amount Loaded</th>
+                    <th>Total Price</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in loading_transactions %}
+                <tr>
+                    <td>{{ transaction.id }}</td>
+                    <td>{{ transaction.service_provider }}</td>
+                    <td>{{ transaction.amount_loaded }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Print Service Transactions Table -->
+        <h2>Print Transactions</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Service ID</th>
+                    <th>Pages</th>
+                    <th>Back-to-Back</th>
+                    <th>Total Price</th>
+                    <th>User</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in print_transactions %}
+                <tr>
+                    <td>{{ transaction.print_service_id }}</td>
+                    <td>{{ transaction.pages }}</td>
+                    <td>{{ transaction.back_to_back }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.user_id }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+              
+    </div>
+</body>
+</html>

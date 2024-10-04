@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Archived Products</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Archived Products</h1>
+        <a href="{{ url_for('manage_products') }}" class="btn btn-secondary mb-3">Back to Manage Products</a>
+        
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Stock</th>
+                    <th>Store Price</th>
+                    <th>Original Price</th>
+                    <th>Purchase Location</th>
+                    <th>Expiration Date</th> <!-- New Column for Expiration Date -->
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through archived products -->
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.stock }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>{{ product.original_price }}</td>
+                    <td>{{ product.purchase_location }}</td>
+                    <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td> <!-- Display Expiration Date -->
+                    <td>
+                        <!-- Restore product -->
+                        <form action="{{ url_for('restore_product', product_id=product.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to restore this product?');">Restore</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
