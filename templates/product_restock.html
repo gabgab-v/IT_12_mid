@@ -9,7 +9,8 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Restock {{ product.name }}</h1>
-
+        
+        <a href="{{ url_for('manage_products') }}" class="btn btn-secondary mb-3">Back to Products</a>
         <!-- Restock Form -->
         <form method="POST">
             <div class="form-group">
