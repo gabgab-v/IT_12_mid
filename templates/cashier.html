@@ -11,29 +11,23 @@
         }
 
         .container {
-            display: flex;
-            justify-content: space-between;
             padding: 20px;
         }
 
         .transaction-panel, .total-panel {
             border: 1px solid #ddd;
-            padding: 10px;
-            width: 48%;
+            border-radius: 10px;
+            padding: 15px;
+            background-color: #f9f9f9;
         }
 
         .transaction-panel h3, .total-panel h3 {
             text-align: center;
+            font-weight: bold;
         }
 
-        .product-list {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .product-list th, .product-list td {
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
+        .product-list th {
+            text-align: left;
         }
 
         .total-amount {
@@ -45,70 +39,88 @@
 
         .action-buttons {
             margin-top: 20px;
-            text-align: center;
+        }
+
+        .btn-primary, .btn-warning, .btn-info {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        @media (min-width: 768px) {
+            .btn-primary, .btn-warning, .btn-info {
+                width: auto;
+                margin-right: 10px;
+            }
         }
 
         input[type="number"], select {
             padding: 5px;
-            width: 100%;
+        }
+
+        .modal-content {
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-
-<div>
-    <h1>Cashier</h1>
-    <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
-</div>
 <div class="container">
-    <div class="transaction-panel">
-        <h3>Product List</h3>
-        <table class="product-list">
-            <thead>
-            <tr>
-                <th>Product Name</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-            </tr>
-            </thead>
-            <tbody id="productTableBody">
-            <!-- Filled dynamically by JS -->
-            </tbody>
-        </table>
-
-        <div class="action-buttons">
-            <form id="productForm" method="POST">
-                <label for="product_id">Select Product:</label>
-                <select id="product_id" name="product_id">
-                    {% for product in products %}
-                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock }}">
-                        {{ product.name }} (P {{ product.price }}) - Stock: {{ product.stock }}
-                    </option>
-                    {% endfor %}
-                </select>
-                
-
-                <label for="quantity">Quantity:</label>
-                <input type="number" id="quantity" name="quantity" placeholder="Enter Quantity" value="1" min="1">
-
-                <button type="submit">Add Product</button>
-            </form>
-
-            <!-- New Button to Add Print Service Transaction -->
-            <!-- Add Print Service Button -->
-            <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#addPrintServiceModal">
-                Add Print Service
-            </button>
-
-            <!-- Button to Add Loading Service -->
-            <button type="button" class="btn btn-warning mt-3" data-bs-toggle="modal" data-bs-target="#addLoadingServiceModal">
-                Add Loading Service
-            </button>
+    <div class="row mb-3">
+        <div class="col-md-12 text-center">
+            <h1>Cashier System</h1>
+            <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
         </div>
     </div>
 
-    <!-- Print Service Modal -->
+    <div class="row">
+        <!-- Transaction Panel -->
+        <div class="col-md-7 transaction-panel mb-3">
+            <h3>Product List</h3>
+            <table class="table table-bordered product-list">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <!-- Filled dynamically by JS -->
+                </tbody>
+            </table>
+
+            <div class="action-buttons text-center">
+                <form id="productForm" method="POST" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="product_id" class="form-label">Select Product</label>
+                        <select id="product_id" name="product_id" class="form-select">
+                            {% for product in products %}
+                                <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock }}">
+                                    {{ product.name }} (P {{ product.price }}) - Stock: {{ product.stock }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </div>
+                </form>
+
+                <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#addPrintServiceModal">
+                    Add Print Service
+                </button>
+
+                <button type="button" class="btn btn-warning mt-3" data-bs-toggle="modal" data-bs-target="#addLoadingServiceModal">
+                    Add Loading Service
+                </button>
+            </div>
+        </div>
+
+        <!-- Print Service Modal -->
     <div class="modal fade" id="addPrintServiceModal" tabindex="-1" aria-labelledby="addPrintServiceModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -203,61 +215,75 @@
 
 
 
-    <div class="total-panel">
-        <h3>Total</h3>
-        <p>Units: <span id="unitsCount">0</span></p>
-        <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
-    
-        <div class="action-buttons">
-            <!-- Unified Checkout Form -->
-            <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
-                <!-- Hidden inputs dynamically added by JS for products, print services, and load transactions -->
-                <button type="submit" id="checkoutButton">Checkout</button>
-            </form>
+        <!-- Total Panel -->
+        <div class="col-md-5 total-panel">
+            <h3>Total</h3>
+            <p>Units: <span id="unitsCount">0</span></p>
+            <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
+            
+            <div class="action-buttons">
+                <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
+                    <button type="submit" class="btn btn-success w-100">Checkout</button>
+                </form>
+            </div>
         </div>
     </div>
-    
 </div>
+
+
 
 <script>
     let totalAmount = 0;
     let unitsCount = 0;
 
     // Add product to the cart
-    document.getElementById('productForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+// Add product to the cart
+document.getElementById('productForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-        const productSelect = document.getElementById('product_id');
-        const stock = parseInt(productSelect.options[productSelect.selectedIndex].getAttribute('data-stock'));
-        const quantity = parseInt(document.getElementById('quantity').value);
+    const productSelect = document.getElementById('product_id');
+    const stock = parseInt(productSelect.options[productSelect.selectedIndex].getAttribute('data-stock'));
+    const quantity = parseInt(document.getElementById('quantity').value);
 
-        if (quantity > stock) {
-            alert('Insufficient stock for this product!');
-            return;
-        }
+    if (quantity > stock) {
+        alert('Insufficient stock for this product!');
+        return;
+    }
 
-        // Get product details
-        const productId = productSelect.value;
-        const productName = productSelect.options[productSelect.selectedIndex].text.split(" (")[0];
-        const productPrice = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-price'));
-        const totalPrice = productPrice * quantity;
+    const productId = productSelect.value;
+    const productName = productSelect.options[productSelect.selectedIndex].text.split(" (")[0];
+    const productPrice = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-price'));
+    const totalPrice = productPrice * quantity;
 
-        // Add product details to the table
-        const productTable = document.getElementById('productTableBody');
+    const productTable = document.getElementById('productTableBody');
+    
+    // Check if product already exists in the table
+    let existingRow = document.querySelector(`tr[data-product-id="${productId}"]`);
+    
+    if (existingRow) {
+        // Update existing row: update quantity and total
+        let existingQuantityCell = existingRow.querySelector('.product-quantity');
+        let existingTotalCell = existingRow.querySelector('.product-total');
+        
+        let newQuantity = parseInt(existingQuantityCell.textContent) + quantity;
+        let newTotal = productPrice * newQuantity;
+        
+        existingQuantityCell.textContent = newQuantity;
+        existingTotalCell.textContent = `P ${newTotal.toFixed(2)}`;
+
+        // Update hidden inputs for this product
+        let hiddenQuantityInput = document.querySelector(`input[name="quantities[]"][data-product-id="${productId}"]`);
+        hiddenQuantityInput.value = newQuantity;
+    } else {
+        // Add new row if product doesn't exist
         const newRow = productTable.insertRow();
+        newRow.setAttribute('data-product-id', productId);
         newRow.innerHTML = `
             <td>${productName}</td>
             <td>P ${productPrice.toFixed(2)}</td>
-            <td>${quantity}</td>
-            <td>P ${totalPrice.toFixed(2)}</td>
+            <td class="product-quantity">${quantity}</td>
+            <td class="product-total">P ${totalPrice.toFixed(2)}</td>
         `;
-
-        // Update totals
-        totalAmount += totalPrice;
-        unitsCount += quantity;
-
-        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
-        document.getElementById('unitsCount').textContent = unitsCount;
 
         // Add product details to hidden checkout form
         const checkoutForm = document.getElementById('checkoutForm');
@@ -265,14 +291,25 @@
         productInput.type = 'hidden';
         productInput.name = 'product_ids[]';
         productInput.value = productId;
+        productInput.setAttribute('data-product-id', productId);
         checkoutForm.appendChild(productInput);
 
         const quantityInput = document.createElement('input');
         quantityInput.type = 'hidden';
         quantityInput.name = 'quantities[]';
         quantityInput.value = quantity;
+        quantityInput.setAttribute('data-product-id', productId);
         checkoutForm.appendChild(quantityInput);
-    });
+    }
+
+    // Update totals
+    totalAmount += totalPrice;
+    unitsCount += quantity;
+
+    document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+    document.getElementById('unitsCount').textContent = unitsCount;
+});
+
 
     document.getElementById('printServiceForm').addEventListener('submit', function(event) {
         event.preventDefault();
