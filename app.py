@@ -5,6 +5,12 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import extract, func
+import pytz
+
+PH_TZ = pytz.timezone('Asia/Manila')
+
+def current_ph_timestamp():
+    return datetime.now(PH_TZ).replace(microsecond=0)
 
 # Initialize Flask and extensions
 app = Flask(__name__)
@@ -70,7 +76,7 @@ class Transaction(db.Model):
     # For both product and loading transactions
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    timestamp = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     # New fields for loading transactions
     is_loading = db.Column(db.Boolean, default=False)
@@ -373,9 +379,9 @@ def dashboard():
     if current_user.role == 'admin':
         return redirect(url_for('another_dashboard'))
     elif current_user.role == 'cashier':
-        return redirect(url_for('cashier_dashboard'))
+        return redirect(url_for('cashier'))
     elif current_user.role == 'inventory':
-        return redirect(url_for('inventory_dashboard'))
+        return redirect(url_for('another_dashboard'))
     return redirect(url_for('login'))
 
 @app.route('/admin_dashboard')
@@ -1075,12 +1081,22 @@ def chart_data():
 
 @app.route('/cashier', methods=['GET', 'POST'])
 def cashier():
+
+    if current_user.role != 'cashier' and current_user.role != 'admin':
+        return redirect(url_for('debug'))  # Redirect unauthorized roles
+    
     print_services = PrintService.query.all()
     paper_types = PaperInventory.query.all()
     load_balance = LoadBalance.query.first()
     products = Product.query.filter_by(deleted=False, is_voided=False).all()  # Fetch all valid products
     return render_template('cashier.html', products=products, print_services=print_services, paper_types=paper_types,
                            load_balance = load_balance)
+
+@app.route('/debug')
+@login_required
+def debug():
+    return f"You don't have access to this page. Your role is: {current_user.role}"
+
 
 @app.route('/checkout', methods=['POST'])
 @login_required

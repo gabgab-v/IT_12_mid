@@ -16,7 +16,16 @@
             transition: width 0.3s ease, opacity 0.3s ease;
             width: 16rem;
             opacity: 1;
+            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 100vh; /* Make sidebar fit the viewport height */
+
+            /* Hide scrollbar styles */
+            scrollbar-width: none; /* Firefox */
         }
+        .sidebar::-webkit-scrollbar {
+            display: none; /* Webkit (Chrome, Safari, Edge) */
+        }
+
         .collapsed-sidebar {
             width: 60px;
         }
@@ -38,7 +47,7 @@
         }
         .toggle-btn {
             z-index: 30;
-            right: -12px;
+            right: 10px; /* Move it inside the sidebar */
             top: 16px;
             width: 40px;
             height: 40px;
@@ -88,6 +97,10 @@
             <a href="{{ url_for('sales_report') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-chart-line"></i>
                 <span class="sidebar-text ml-3">Sales Report</span>
+            </a>
+            <a href="{{ url_for('manage_users') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-box"></i>
+                <span class="sidebar-text ml-3">Manage Users</span>
             </a>
             <a href="{{ url_for('logout') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-sign-out-alt"></i>
