@@ -446,6 +446,39 @@ def manage_products():
     products = Product.query.filter_by(is_voided=False, deleted=False).all()
     return render_template('manage_products.html', products=products)
 
+@app.route('/search_products', methods=['GET'])
+@login_required
+@admin_required
+def search_products():
+    search_name = request.args.get('search_name', '').strip()
+    search_category = request.args.get('search_category', '').strip()
+
+    query = Product.query.filter_by(is_voided=False, deleted=False)
+    
+    if search_name:
+        query = query.filter(Product.name.ilike(f"%{search_name}%"))
+    if search_category:
+        query = query.join(Category).filter(Category.name.ilike(f"%{search_category}%"))
+
+    products = query.all()
+    
+    # Convert to JSON serializable format
+    products_data = [
+        {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category.name,
+            'stock': product.stock,
+            'price': product.price,
+            'original_price': product.original_price,
+            'purchase_location': product.purchase_location,
+            'expiration_date': product.expiration_date.strftime('%Y-%m-%d') if product.expiration_date else 'N/A'
+        } for product in products
+    ]
+
+    return jsonify(products_data)
+
+
 # Route to display the restock form and log restocks
 @app.route('/product/<int:product_id>/restock', methods=['GET', 'POST'])
 def restock_product(product_id):

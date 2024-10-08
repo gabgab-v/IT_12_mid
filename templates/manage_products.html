@@ -14,6 +14,12 @@
         <a href="{{ url_for('manage_archived_products') }}" class="btn btn-secondary mb-3">View Archived Products</a>
         <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary mb-3">Manage Categories</a>
 
+        <!-- Search Form -->
+        <form class="form-inline mb-3">
+            <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
+            <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
+        </form>
+
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -28,8 +34,7 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                <!-- Loop through products from the database -->
+            <tbody id="products_table">
                 {% for product in products %}
                 <tr>
                     <td>{{ product.id }}</td>
@@ -41,21 +46,14 @@
                     <td>{{ product.purchase_location }}</td>
                     <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
                     <td>
-                        <!-- Edit Product -->
                         <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">Edit</a>
-                        
-                        <!-- Remove Product -->
                         <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" style="display: inline;">
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
                         </form>
-
-                        <!-- Reduce Stock Form -->
                         <form action="{{ url_for('reduce_stock', product_id=product.id) }}" method="POST" style="display: inline;">
                             <input type="number" name="reduce_quantity" min="1" max="{{ product.stock }}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
                             <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
                         </form>
-
-                        <!-- Restock Button -->
                         <a href="{{ url_for('restock_product', product_id=product.id) }}" class="btn btn-primary btn-sm">Restock</a>
                     </td>
                 </tr>
@@ -63,5 +61,50 @@
             </tbody>
         </table>
     </div>
+
+    <script>
+        function fetchFilteredProducts() {
+            const searchName = document.getElementById('search_name').value;
+            const searchCategory = document.getElementById('search_category').value;
+
+            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('products_table');
+                    tableBody.innerHTML = '';  // Clear current rows
+
+                    data.forEach(product => {
+                        const row = `
+                            <tr>
+                                <td>${product.id}</td>
+                                <td>${product.name}</td>
+                                <td>${product.category}</td>
+                                <td>${product.stock}</td>
+                                <td>${product.price}</td>
+                                <td>${product.original_price}</td>
+                                <td>${product.purchase_location}</td>
+                                <td>${product.expiration_date}</td>
+                                <td>
+                                    <a href="/edit_product/${product.id}" class="btn btn-warning btn-sm">Edit</a>
+                                    <form action="/delete_product/${product.id}" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
+                                    </form>
+                                    <form action="/reduce_stock/${product.id}" method="POST" style="display: inline;">
+                                        <input type="number" name="reduce_quantity" min="1" max="${product.stock}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
+                                        <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
+                                    </form>
+                                    <a href="/restock_product/${product.id}" class="btn btn-primary btn-sm">Restock</a>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.insertAdjacentHTML('beforeend', row);
+                    });
+                });
+        }
+
+        // Add event listeners to call fetchFilteredProducts on input
+        document.getElementById('search_name').addEventListener('input', fetchFilteredProducts);
+        document.getElementById('search_category').addEventListener('input', fetchFilteredProducts);
+    </script>
 </body>
 </html>
