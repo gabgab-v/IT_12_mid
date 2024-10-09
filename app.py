@@ -50,14 +50,14 @@ class Product(db.Model):
     original_price = db.Column(db.Float, nullable=False)  # Original cost price
     stock = db.Column(db.Integer, nullable=False)
     purchase_location = db.Column(db.String(100), nullable=True)  # e.g., 'Supermarket A', 'Market B'
+    brand = db.Column(db.String(100), nullable=True)  # New field for brand
     is_voided = db.Column(db.Boolean, default=False)  # For voiding items
     deleted = db.Column(db.Boolean, default=False)  # For archiving
     expiration_date = db.Column(db.Date, nullable=True)  # New field for expiration date
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
 
     def __repr__(self):
-        return f"Product('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.purchase_location}', '{self.is_voided}', '{self.deleted}', '{self.expiration_date}')"
-
+        return f"Product('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.purchase_location}', '{self.brand}', '{self.is_voided}', '{self.deleted}', '{self.expiration_date}')"
 # Transaction model remains the same
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -134,7 +134,7 @@ class LoadingTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount_loaded = db.Column(db.Float, nullable=False)
     service_provider = db.Column(db.String(100), nullable=False)  # 'Globe', 'Smart', 'GCash'
-    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    timestamp = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     # Foreign key to transaction type
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('transaction_type.id'), nullable=False)
@@ -165,7 +165,7 @@ class PrintService(db.Model):
     service_type = db.Column(db.String(100), nullable=False)  # e.g., 'Photocopy', 'Black and White Print'
     price_per_page = db.Column(db.Float, nullable=False)
     admin_price_override = db.Column(db.Float, nullable=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    timestamp = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     def __repr__(self):
         return f"PrintService('{self.service_type}', '{self.price_per_page}', '{self.admin_price_override}', '{self.timestamp}')"
@@ -177,7 +177,7 @@ class InkInventory(db.Model):
     stock = db.Column(db.Integer, nullable=False)  # Number of ink cartridges/bottles
     amount_spent = db.Column(db.Float, nullable=False)  # Total cost for the ink purchase
     purchase_location = db.Column(db.String(100), nullable=False)  # Where the ink was bought
-    last_restock_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    last_restock_date = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     def __repr__(self):
         return f"InkInventory('{self.name}', '{self.stock}', '{self.amount_spent}', '{self.purchase_location}', '{self.last_restock_date}')"
@@ -185,10 +185,9 @@ class InkInventory(db.Model):
 
 class PaperInventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    rim_count = db.Column(db.Integer, nullable=False)  # Number of full paper rims
     individual_paper_count = db.Column(db.Integer, nullable=False)  # Track per sheet
     amount_spent = db.Column(db.Float, nullable=False)  # Total cost for the paper purchase
-    last_restock_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    last_restock_date = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
     
     # Foreign key to track the paper type
     paper_type_id = db.Column(db.Integer, db.ForeignKey('paper_type.id'), nullable=False)
@@ -199,7 +198,7 @@ class PaperInventory(db.Model):
     location = db.relationship('Location', backref='paper_inventory', lazy=True)
 
     def __repr__(self):
-        return f"PaperInventory('{self.paper_type.size}', '{self.rim_count}', '{self.individual_paper_count}', '{self.amount_spent}', '{self.location.name}', '{self.last_restock_date}')"
+        return f"PaperInventory('{self.paper_type.size}', '{self.individual_paper_count}', '{self.amount_spent}', '{self.location.name}', '{self.last_restock_date}')"
 
 class PrintTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -211,7 +210,7 @@ class PrintTransaction(db.Model):
     ink_used = db.Column(db.Float, nullable=False)  # Amount of ink used in this transaction
     paper_used = db.Column(db.Integer, nullable=False)  # Number of paper sheets used
     total_cost = db.Column(db.Float, nullable=False)  # Total cost of materials used
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=current_ph_timestamp)
 
     def __repr__(self):
         return f"PrintTransaction('{self.service_type}', '{self.pages}', '{self.total_price}', '{self.profit}', '{self.timestamp}')"
@@ -220,7 +219,7 @@ class PrintTransaction(db.Model):
 class Restock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restock_amount = db.Column(db.Float, nullable=False)  # Amount of items restocked
-    restock_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    restock_date = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
     amount_spent = db.Column(db.Float, nullable=False)  # Total cost of the restock
     restock_location = db.Column(db.String(100), nullable=False)  # Where the items were restocked
 
@@ -673,7 +672,7 @@ def sales_report():
                            filter_type=filter_type, 
                            total_revenue=total_revenue)
 
-#Add Items
+# Add Items
 @app.route('/add_product', methods=['GET', 'POST'])
 def add_product():
     categories = Category.query.all()  # Fetch all categories for the dropdown
@@ -681,6 +680,7 @@ def add_product():
     if request.method == 'POST':
         # Get form data
         name = request.form['name']
+        brand = request.form['brand']  # Retrieve brand from the form
         price = float(request.form['price'])
         original_price = float(request.form['original_price'])
         stock = int(request.form['stock'])
@@ -698,13 +698,14 @@ def add_product():
                 return redirect(url_for('add_product'))
 
         # Validate input
-        if not name or price <= 0 or original_price <= 0 or stock < 0 or not category_id:
+        if not name or not brand or price <= 0 or original_price <= 0 or stock < 0 or not category_id:
             flash('Please fill out all fields correctly and select a category.', 'danger')
             return redirect(url_for('add_product'))
 
         # Create a new Product instance
         new_product = Product(
             name=name,
+            brand=brand,  # Add brand to the product
             price=price,
             original_price=original_price,
             stock=stock,
@@ -1516,7 +1517,6 @@ def manage_printing_services():
         inventory = PaperInventory.query.filter_by(paper_type_id=paper_type.id).first()
         paper_data.append({
             'type': f"{paper_type.size} - {paper_type.description}",
-            'rim_count': inventory.rim_count if inventory else 0,
             'individual_paper_count': inventory.individual_paper_count if inventory else 0
         })
     
@@ -1918,7 +1918,7 @@ def add_restock():
         restock_location=restock_location,
         amount_spent=amount_spent,
         inventory_type=restock_type,  # Track whether it is ink, paper, load, etc.
-        restock_date=datetime.utcnow()
+        restock_date=current_ph_timestamp()
     )
     db.session.add(new_restock)
 
@@ -1935,19 +1935,15 @@ def add_restock():
 
         # Update or create a paper inventory entry
         if paper_inventory:
-            # Update the existing paper inventory
-            paper_inventory.rim_count += restock_amount  # Adding restocked rims
-            paper_inventory.individual_paper_count += restock_amount * 500  # Adding the total sheets
-            paper_inventory.amount_spent += amount_spent  # Updating total amount spent
-            paper_inventory.last_restock_date = datetime.utcnow()  # Updating last restock date
+            paper_inventory.individual_paper_count += restock_amount  # Track sheets only
+            paper_inventory.amount_spent += amount_spent
+            paper_inventory.last_restock_date = current_ph_timestamp()
         else:
-            # Create a new paper inventory entry
             paper_inventory = PaperInventory(
-                rim_count=restock_amount,  # Set initial rim count
-                individual_paper_count=restock_amount * 500,  # Set total sheets based on rim count (500 sheets per rim)
+                individual_paper_count=restock_amount,
                 amount_spent=amount_spent,
-                paper_type_id=paper_type_id,  # Set the selected paper type
-                location_id=restock_location  # Set restock location
+                paper_type_id=paper_type_id,
+                location_id=restock_location
             )
             db.session.add(paper_inventory)
 
@@ -1961,7 +1957,7 @@ def add_restock():
             ink_inventory.stock += restock_amount
             ink_inventory.amount_spent += amount_spent
             ink_inventory.purchase_location = restock_location
-            ink_inventory.last_restock_date = datetime.utcnow()
+            ink_inventory.last_restock_date = current_ph_timestamp()
         else:
             # Create a new ink inventory entry
             ink_inventory = InkInventory(
