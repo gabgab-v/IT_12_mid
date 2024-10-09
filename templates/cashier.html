@@ -16,20 +16,17 @@
             padding: 20px;
         }
 
-        .transaction-panel, .total-panel {
+        .transaction-panel, .total-panel, .additional-services-panel {
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 15px;
             background-color: #f9f9f9;
+            margin-bottom: 20px;
         }
 
-        .transaction-panel h3, .total-panel h3 {
+        h3 {
             text-align: center;
             font-weight: bold;
-        }
-
-        .product-list th {
-            text-align: left;
         }
 
         .total-amount {
@@ -43,24 +40,8 @@
             margin-top: 20px;
         }
 
-        .btn-primary, .btn-warning, .btn-info {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        @media (min-width: 768px) {
-            .btn-primary, .btn-warning, .btn-info {
-                width: auto;
-                margin-right: 10px;
-            }
-        }
-
         input[type="number"], select {
             padding: 5px;
-        }
-
-        .modal-content {
-            border-radius: 10px;
         }
     </style>
 </head>
@@ -106,13 +87,12 @@
                         <label for="product_id" class="form-label">Select Product</label>
                         <select id="product_id" name="product_id" class="form-select">
                             <option></option> <!-- This allows the placeholder to work with Select2 -->
-                            {% for product in products %}
+                            {% for product in products %} 
                                 <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock }}">
                                     {{ product.name }} (P {{ product.price }}) - Stock: {{ product.stock }}
                                 </option>
                             {% endfor %}
                         </select>
-                        
                     </div>
                     <div class="col-md-6">
                         <label for="quantity" class="form-label">Quantity</label>
@@ -122,114 +102,80 @@
                         <button type="submit" class="btn btn-primary">Add Product</button>
                     </div>
                 </form>
-
-                <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#addPrintServiceModal">
-                    Add Print Transaction
-                </button>
-
-                <button type="button" class="btn btn-warning mt-3" data-bs-toggle="modal" data-bs-target="#addLoadingServiceModal">
-                    Add Loading Transaction
-                </button>
             </div>
         </div>
 
-        <!-- Print Service Modal -->
-    <div class="modal fade" id="addPrintServiceModal" tabindex="-1" aria-labelledby="addPrintServiceModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="printServiceForm" method="POST" action="{{ url_for('checkout_print_service') }}">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addPrintServiceModalLabel">Add Print Service</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Input fields for Print Service -->
-                        <div class="form-group">
-                            <label for="service_id">Print Service</label>
-                            <select id="service_id" name="service_id" class="form-control" required>
-                                {% for service in print_services %}
-                                    <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+        <!-- Additional Services Panel -->
+        <div class="col-md-5 additional-services-panel">
+            <h3>Additional Services</h3>
 
-                        <div class="form-group">
-                            <label for="pages" class="mt-3">Number of Pages</label>
-                            <input type="number" id="pages" name="pages" class="form-control" required>
-                        </div>
+            <!-- Print Service Form -->
+            <h4>Add Print Service</h4>
+            <form id="printServiceForm" method="POST" action="{{ url_for('checkout_print_service') }}">
+                <div class="form-group mb-3">
+                    <label for="service_id">Print Service</label>
+                    <select id="service_id" name="service_id" class="form-control" required>
+                        {% for service in print_services %}
+                            <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                        <div class="form-group">
-                            <label for="paper_type_id" class="mt-3">Paper Type</label>
-                            <select id="paper_type_id" name="paper_type_id" class="form-control" required>
-                                {% for paper in paper_types %}
-                                    <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
-                                {% endfor %}
-                            </select>                            
-                        </div>
+                <div class="form-group mb-3">
+                    <label for="pages">Number of Pages</label>
+                    <input type="number" id="pages" name="pages" class="form-control" required>
+                </div>
 
-                        <div class="form-group">
-                            <label for="back_to_back" class="mt-3">Back-to-Back Printing?</label>
-                            <input type="checkbox" id="back_to_back" name="back_to_back" value="1">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Add Print Service</button>
-                    </div>
-                </form>
-            </div>
+                <div class="form-group mb-3">
+                    <label for="paper_type_id">Paper Type</label>
+                    <select id="paper_type_id" name="paper_type_id" class="form-control" required>
+                        {% for paper in paper_types %}
+                            <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group form-check mb-3">
+                    <input type="checkbox" id="back_to_back" name="back_to_back" class="form-check-input" value="1">
+                    <label for="back_to_back" class="form-check-label">Back-to-Back Printing?</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Add Print Service</button>
+            </form>
+
+            <!-- Loading Service Form -->
+            <h4 class="mt-4">Add Loading Service</h4>
+            <form id="loadingServiceForm" method="POST" action="{{ url_for('add_loading_service') }}">
+                <div id="balance_display" class="text-center mb-3"></div>
+
+                <div class="form-group mb-3">
+                    <label for="amount_loaded">Amount Loaded</label>
+                    <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" step="0.01" required oninput="calculateTotal()">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="service_provider">Service Provider</label>
+                    <select class="form-control" id="service_provider" name="service_provider" onchange="updateBalance()" required>
+                        <option value="Globe">Globe</option>
+                        <option value="Smart">Smart</option>
+                        <option value="GCash">GCash</option>
+                        <option value="PayMaya">PayMaya</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="total_price">Total Price (with transaction fee)</label>
+                    <input type="text" class="form-control" id="total_price" name="total_price" readonly>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Process Loading</button>
+            </form>
         </div>
     </div>
 
-        <!-- Loading Service Modal -->
-        <div class="modal fade" id="addLoadingServiceModal" tabindex="-1" aria-labelledby="addLoadingServiceModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    
-                    <div id="balance_display" class="text-center mb-3"></div>
-                    
-                    <form id="loadingServiceForm" method="POST" action="{{ url_for('add_loading_service') }}">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="addLoadingServiceModalLabel">Add Loading Service</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <!-- Amount loaded input -->
-                            <div class="form-group">
-                                <label for="amount_loaded">Amount Loaded</label>
-                                <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" step="0.01" placeholder="Enter amount e.g. 100.00" required oninput="calculateTotal()">
-                            </div>
-
-                            <!-- Service provider selection (this will affect the load balance) -->
-                            <div class="form-group">
-                                <label for="service_provider">Service Provider</label>
-                                <select class="form-control" id="service_provider" name="service_provider" onchange="updateBalance()" required>
-                                    <option value="Globe">Globe</option>
-                                    <option value="Smart">Smart</option>
-                                    <option value="GCash">GCash</option>
-                                    <option value="PayMaya">PayMaya</option>
-                                </select>
-                            </div>
-
-                            <!-- Total price (including additional transaction fees) -->
-                            <div class="form-group">
-                                <label for="total_price">Total Price (with transaction fee)</label>
-                                <input type="text" class="form-control" id="total_price" name="total_price" readonly>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary" id="processTransactionBtn">Process Transaction</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-
-
-        <!-- Total Panel -->
-        <div class="col-md-5 total-panel">
+    <!-- Total Panel -->
+    <div class="row">
+        <div class="col-md-12 total-panel">
             <h3>Total</h3>
             <p>Units: <span id="unitsCount">0</span></p>
             <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
@@ -242,7 +188,6 @@
         </div>
     </div>
 </div>
-
 
 
 <script>
