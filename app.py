@@ -58,6 +58,8 @@ class Product(db.Model):
 
     def __repr__(self):
         return f"Product('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.purchase_location}', '{self.brand}', '{self.is_voided}', '{self.deleted}', '{self.expiration_date}')"
+    
+    
 # Transaction model remains the same
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -378,8 +380,12 @@ def dashboard():
     if current_user.role == 'admin':
         return redirect(url_for('another_dashboard'))
     elif current_user.role == 'cashier':
-        return redirect(url_for('cashier'))
+        return redirect(url_for('another_dashboard'))
     elif current_user.role == 'inventory':
+        return redirect(url_for('another_dashboard'))
+    elif current_user.role == 'supplybuyer':
+        return redirect(url_for('another_dashboard'))
+    elif current_user.role == 'helper':
         return redirect(url_for('another_dashboard'))
     return redirect(url_for('login'))
 
@@ -440,7 +446,6 @@ def delete_user(user_id):
 
 @app.route('/manage_products')
 @login_required
-@admin_required
 def manage_products():
     products = Product.query.filter_by(is_voided=False, deleted=False).all()
     return render_template('manage_products.html', products=products)
@@ -742,23 +747,22 @@ def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
 
     if request.method == 'POST':
-        # Get form data
-        product.name = request.form['name']
-        product.price = float(request.form['price'])
-        product.original_price = float(request.form['original_price'])
-        product.stock = int(request.form['stock'])
-        product.purchase_location = request.form['purchase_location']
-
-        # Validate input
-        if not product.name or product.price <= 0 or product.original_price <= 0 or product.stock < 0:
-            flash('Please fill out all fields correctly.', 'danger')
-            return redirect(url_for('edit_product', product_id=product_id))
-
-        # Update and commit to the database
         try:
+            # Only get the 'price' field from the form
+            product.price = float(request.form['price'])
+
+            # Validate input for price only
+            if product.price <= 0:
+                flash('Please enter a valid price.', 'danger')
+                return redirect(url_for('edit_product', product_id=product_id))
+
+            # Commit the update to the database
             db.session.commit()
             flash('Product updated successfully!', 'success')
             return redirect(url_for('view_products'))
+        except ValueError:
+            flash('Please enter a numeric value for the price.', 'danger')
+            return redirect(url_for('edit_product', product_id=product_id))
         except Exception as e:
             db.session.rollback()
             flash(f'Error updating product: {e}', 'danger')
@@ -1116,7 +1120,7 @@ def chart_data():
 @app.route('/cashier', methods=['GET', 'POST'])
 def cashier():
 
-    if current_user.role != 'cashier' and current_user.role != 'admin':
+    if current_user.role != 'cashier' and current_user.role != 'admin' and current_user.role != 'helper':
         return redirect(url_for('debug'))  # Redirect unauthorized roles
     
     print_services = PrintService.query.all()
@@ -1523,7 +1527,8 @@ def manage_printing_services():
     return render_template('manage_printing_services.html', 
                            print_services=print_services, 
                            paper_inventory=paper_data,
-                           ink_inventory=ink_inventory)
+                           ink_inventory=ink_inventory,
+                           paper_types = paper_types)
 
 # @app.route('/manage_printing_services')
 # def manage_printing_services():

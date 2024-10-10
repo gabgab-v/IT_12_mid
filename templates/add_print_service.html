@@ -18,11 +18,8 @@
                 <label for="price_per_page">Price Per Page</label>
                 <input type="number" class="form-control" id="price_per_page" name="price_per_page" step="0.01" placeholder="e.g. 5.00" required>
             </div>
-            <div class="form-group">
-                <label for="admin_price_override">Admin Price Override (Optional)</label>
-                <input type="number" class="form-control" id="admin_price_override" name="admin_price_override" step="0.01" placeholder="e.g. 4.50">
-            </div>
-            <button type="submit" class="btn btn-primary">Add Print Service</button>
+            <button type="submit" class="btn btn-primary mb-3">Add Print Service</button>
+            <a href="{{ url_for('manage_printing_services') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
         </form>
     </div>
 </body>

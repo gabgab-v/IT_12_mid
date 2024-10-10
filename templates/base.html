@@ -67,41 +67,73 @@
     <!-- Sidebar -->
     <div id="sidebar" class="sidebar bg-gray-800 text-white fixed h-full">
         <div class="flex items-center justify-between px-4 py-4 bg-gray-900">
-            <span id="sidebar-title" class="sidebar-text text-lg font-bold">Admin</span>
+            <span id="sidebar-title" class="sidebar-text text-lg font-bold">
+                {% if current_user.role == 'admin' %}
+                    Admin
+                {% elif current_user.role == 'inventory' %}
+                    Inventory
+                {% elif current_user.role == 'supplybuyer' %}
+                    Supply Buyer
+                {% elif current_user.role == 'helper' %}
+                    Helper
+                {% elif current_user.role == 'cashier' %}
+                    Cashier
+                {% endif %}
+            </span>            
         </div>
         <nav id="sidebar-links" class="flex flex-col mt-4 space-y-4">
+            {% if current_user.role == 'admin' or current_user.role == 'inventory'  or current_user.role == 'supplybuyer' %}
             <a href="{{ url_for('manage_products') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-box"></i>
                 <span class="sidebar-text ml-3">Manage Products</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
             <a href="{{ url_for('manage_loading_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-users"></i>
                 <span class="sidebar-text ml-3">Manage Loading Services</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
             <a href="{{ url_for('manage_printing_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="sidebar-text ml-3">Manage Printing Services</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' or current_user.role == 'supplybuyer' or current_user.role == 'inventory' or current_user.role == 'helper' %}
             <a href="{{ url_for('manage_restock_events') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-users"></i>
-                <span class="sidebar-text ml-3">Restock</span>
+                {% if current_user.role == 'inventory' or current_user.role == 'helper' %}
+                    <span class="sidebar-text ml-3"> View Restock</span>
+                {% else %}
+                    <span class="sidebar-text ml-3">Restock</span>
+                {% endif %}
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' or current_user.role == 'helper' or current_user.role == 'cashier'%}
             <a href="{{ url_for('cashier') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-users"></i>
                 <span class="sidebar-text ml-3">Cashier</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
             <a href="{{ url_for('view_transactions') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-file-alt"></i>
                 <span class="sidebar-text ml-3">View Transactions</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
             <a href="{{ url_for('sales_report') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-chart-line"></i>
                 <span class="sidebar-text ml-3">Sales Report</span>
             </a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
             <a href="{{ url_for('manage_users') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-box"></i>
                 <span class="sidebar-text ml-3">Manage Users</span>
             </a>
+            {% endif %}
             <a href="{{ url_for('logout') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="sidebar-text ml-3">Logout</span>

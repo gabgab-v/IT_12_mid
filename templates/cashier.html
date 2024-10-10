@@ -50,16 +50,16 @@
     <div class="row mb-3">
         <div class="col-md-12 text-center">
             <h1>Cashier System</h1>
-            {% if current_user.role == 'admin' %}
+
             <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
-            {% endif %}
+
             
-            {% if current_user.role == 'cashier' %}
+            <!-- {% if current_user.role == 'cashier' %}
             <a href="{{ url_for('logout') }}" class="btn btn-secondary mb-3">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="sidebar-text ml-3">Logout</span>
             </a>
-            {% endif %}
+            {% endif %} -->
         </div>
     </div>
 
@@ -99,7 +99,9 @@
                         <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1">
                     </div>
                     <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary">Add Product</button>
+                        <!-- Add 'id' to the button -->
+                        <button type="submit" class="btn btn-primary" id="addProductButton" disabled>Add Product</button>
+
                     </div>
                 </form>
             </div>
@@ -424,6 +426,26 @@ document.getElementById('productForm').addEventListener('submit', function(event
 
         document.getElementById('total_price').value = totalPrice.toFixed(2);
     }
+
+    $(document).ready(function() {
+    const productSelect = $('#product_id');
+    const addButton = $('#addProductButton');
+
+    // Disable the button by default
+    addButton.prop('disabled', true);
+
+    // Listen for changes on the product select field
+    productSelect.on('change', function() {
+        if (productSelect.val()) {
+            // Enable the button if a product is selected
+            addButton.prop('disabled', false);
+        } else {
+            // Disable the button if no product is selected
+            addButton.prop('disabled', true);
+        }
+    });
+});
+
 </script>
 <script>
     $(document).ready(function() {

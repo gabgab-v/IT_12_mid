@@ -25,6 +25,65 @@
             Add Paper Type
         </button>
 
+        <!-- Button to trigger Print Service Modal -->
+        <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#printServiceModal">
+            Add Checkout Print Service
+        </button>
+
+        <!-- Print Service Modal -->
+        <div class="modal fade" id="printServiceModal" tabindex="-1" role="dialog" aria-labelledby="printServiceModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="printServiceModalLabel">Add Print Service</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="printServiceForm" method="POST" action="{{ url_for('checkout_print_service') }}">
+                        <div class="modal-body">
+                            <div class="form-group mb-3">
+                                <label for="service_id">Print Service</label>
+                                <select id="service_id" name="service_id" class="form-control" required>
+                                    {% for service in print_services %}
+                                        <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="pages">Number of Pages</label>
+                                <input type="number" id="pages" name="pages" class="form-control" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="paper_type_id">Paper Type</label>
+                                <select id="paper_type_id" name="paper_type_id" class="form-control" required>
+                                    {% for paper in paper_types %}
+                                        <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group form-check mb-3">
+                                <input type="checkbox" id="back_to_back" name="back_to_back" class="form-check-input" value="1">
+                                <label for="back_to_back" class="form-check-label">Back-to-Back Printing?</label>
+                            </div>
+
+                            <div class="form-group form-check mb-3">
+                                <input type="checkbox" id="void_transaction" name="void_transaction" class="form-check-input" value="1">
+                                <label for="void_transaction" class="form-check-label">Void Transaction (Deduct stock, no sales log)</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Print Service</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Ink Type Modal -->
         <div class="modal fade" id="inkTypeModal" tabindex="-1" role="dialog" aria-labelledby="inkTypeModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -90,7 +149,6 @@
                     <th>ID</th>
                     <th>Service Type</th>
                     <th>Price Per Page</th>
-                    <th>Admin Price Override</th>
                     <th>Date/Time</th>
                 </tr>
             </thead>
@@ -100,7 +158,6 @@
                     <td>{{ service.id }}</td>
                     <td>{{ service.service_type }}</td>
                     <td>{{ service.price_per_page }}</td>
-                    <td>{{ service.admin_price_override if service.admin_price_override else 'N/A' }}</td>
                     <td>{{ service.timestamp }}</td>
                 </tr>
                 {% endfor %}

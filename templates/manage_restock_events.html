@@ -9,11 +9,16 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center">Manage Restock Events</h1>
+        {% if current_user.role == 'inventory' %}
+            <h1 class="text-center">View Restock Events</h1>
+        {% else %}
+            <h1 class="text-center">Manage Restock Events</h1>
+        {% endif %}
 
         <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        {% if current_user.role == 'admin' or current_user.role == 'supplybuyer' %}
         <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addRestockModal">Add Restock Event</button>
-
+        {% endif %}
         <table class="table table-bordered">
             <thead>
                 <tr>
