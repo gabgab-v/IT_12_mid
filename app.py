@@ -1378,7 +1378,12 @@ def unified_checkout():
 @app.route('/manage_loading_services')
 def manage_loading_services():
     loading_transactions = LoadingTransaction.query.all()
-    return render_template('manage_loading_services.html', loading_transactions=loading_transactions)
+    load_balance = LoadBalance.query.first()
+    restocks = Restock.query.filter(Restock.inventory_type.in_(['load', 'gcash'])).all()
+    return render_template('manage_loading_services.html', loading_transactions=loading_transactions,
+                                   normal_load=load_balance.normal_load,
+        gcash_balance=load_balance.gcash_balance,
+        restocks=restocks)
 
 @app.route('/add-loading-transaction', methods=['GET', 'POST'])
 def add_loading_transaction():

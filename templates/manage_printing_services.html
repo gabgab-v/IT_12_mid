@@ -12,23 +12,31 @@
         
         <!-- Navigation buttons -->
         <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+        {% if current_user.role == 'admin' %}
         <a href="{{ url_for('add_print_service') }}" class="btn btn-secondary mb-3">Add Print Service</a>
+        {% endif %}
         <!-- <a href="{{ url_for('checkout_print_service') }}" class="btn btn-secondary mb-3">Checkout Print Service</a> -->
 
+        {% if current_user.role == 'admin' %}
         <!-- Button to trigger Ink Type Modal -->
         <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#inkTypeModal">
             Add Ink Type
         </button>
+        {% endif %}
 
+        {% if current_user.role == 'admin' %}
         <!-- Button to trigger Paper Type Modal -->
         <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#paperTypeModal">
             Add Paper Type
         </button>
+        {% endif %}
 
+        {% if current_user.role == 'admin' %}
         <!-- Button to trigger Print Service Modal -->
         <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#printServiceModal">
             Add Checkout Print Service
         </button>
+        {% endif %}
 
         <!-- Print Service Modal -->
         <div class="modal fade" id="printServiceModal" tabindex="-1" role="dialog" aria-labelledby="printServiceModalLabel" aria-hidden="true">

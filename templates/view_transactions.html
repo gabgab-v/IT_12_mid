@@ -84,7 +84,7 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>Service ID</th>
+                        <th>Service Type</th>
                         <th>Pages</th>
                         <th>Back-to-Back</th>
                         <th>Total Price</th>
@@ -95,7 +95,7 @@
                 <tbody>
                     {% for transaction in print_transactions %}
                     <tr>
-                        <td>{{ transaction.print_service_id }}</td>
+                        <td>{{ transaction.print_service.service_type }}</td> 
                         <td>{{ transaction.pages }}</td>
                         <td>{{ transaction.back_to_back }}</td>
                         <td>{{ transaction.total_price }}</td>
