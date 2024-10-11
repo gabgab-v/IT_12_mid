@@ -302,75 +302,82 @@ document.getElementById('productForm').addEventListener('submit', function(event
 });
 
 
-    document.getElementById('printServiceForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+document.getElementById('printServiceForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-        // Get selected print service details
-        const serviceId = document.getElementById('service_id').value;
-        const serviceName = document.getElementById('service_id').options[document.getElementById('service_id').selectedIndex].text;
-        const pages = parseInt(document.getElementById('pages').value);
-        const paperTypeId = document.getElementById('paper_type_id').value;
-        const paperTypeName = document.getElementById('paper_type_id').options[document.getElementById('paper_type_id').selectedIndex].text;
-        const backToBack = document.getElementById('back_to_back').checked ? 'Yes' : 'No';
+    // Get selected print service details
+    const serviceId = document.getElementById('service_id').value;
+    const serviceName = document.getElementById('service_id').options[document.getElementById('service_id').selectedIndex].text;
+    const pages = parseInt(document.getElementById('pages').value);
+    const paperTypeId = document.getElementById('paper_type_id').value;
+    const paperTypeName = document.getElementById('paper_type_id').options[document.getElementById('paper_type_id').selectedIndex].text;
+    const backToBack = document.getElementById('back_to_back').checked ? 'Yes' : 'No';
 
-        // Calculate price
-        const servicePrice = parseFloat(serviceName.split('P')[1].split(' ')[0]);
-        const totalPrice = servicePrice * pages;
+    // Calculate price
+    let servicePrice = parseFloat(serviceName.split('P')[1].split(' ')[0]);
 
-        // Add to product list
-        const productTable = document.getElementById('productTableBody');
-        const newRow = productTable.insertRow();
-        newRow.innerHTML = `
-            <td>Print Service - ${serviceName} (${paperTypeName}, Back-to-Back: ${backToBack})</td>
-            <td>P ${servicePrice.toFixed(2)}</td>
-            <td>${pages}</td>
-            <td>P ${totalPrice.toFixed(2)}</td>
-            <td><button class="btn btn-danger btn-sm remove-btn">Remove</button></td>
-        `;
+    // Double the price if back-to-back is selected
+    if (document.getElementById('back_to_back').checked) {
+        servicePrice *= 2;
+    }
 
-        newRow.querySelector('.remove-btn').addEventListener('click', function() {
+    const totalPrice = servicePrice * pages;
+
+    // Add to product list
+    const productTable = document.getElementById('productTableBody');
+    const newRow = productTable.insertRow();
+    newRow.innerHTML = `
+        <td>Print Service - ${serviceName} (${paperTypeName}, Back-to-Back: ${backToBack})</td>
+        <td>P ${servicePrice.toFixed(2)}</td>
+        <td>${pages}</td>
+        <td>P ${totalPrice.toFixed(2)}</td>
+        <td><button class="btn btn-danger btn-sm remove-btn">Remove</button></td>
+    `;
+
+    newRow.querySelector('.remove-btn').addEventListener('click', function() {
         const rowIndex = this.parentNode.parentNode.rowIndex;
         removePrintRow(rowIndex, totalPrice, pages);
-        });
+    });
+
+    // Update totals
+    totalAmount += totalPrice;
+    unitsCount += pages;
+
+    document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+    document.getElementById('unitsCount').textContent = unitsCount;
+
+    // Add print service details to hidden checkout form
+    const checkoutForm = document.getElementById('checkoutForm');
+
+    const serviceInput = document.createElement('input');
+    serviceInput.type = 'hidden';
+    serviceInput.name = 'service_ids[]';
+    serviceInput.value = serviceId;
+    checkoutForm.appendChild(serviceInput);
+
+    const pagesInput = document.createElement('input');
+    pagesInput.type = 'hidden';
+    pagesInput.name = 'pages[]';
+    pagesInput.value = pages;
+    checkoutForm.appendChild(pagesInput);
+
+    const paperTypeInput = document.createElement('input');
+    paperTypeInput.type = 'hidden';
+    paperTypeInput.name = 'paper_type_ids[]';
+    paperTypeInput.value = paperTypeId;
+    checkoutForm.appendChild(paperTypeInput);
+
+    const backToBackInput = document.createElement('input');
+    backToBackInput.type = 'hidden';
+    backToBackInput.name = 'back_to_back[]';
+    backToBackInput.value = backToBack;
+    checkoutForm.appendChild(backToBackInput);
+
+    // Close the modal
+    const printServiceModal = bootstrap.Modal.getInstance(document.getElementById('addPrintServiceModal'));
+    printServiceModal.hide();
 
 
-        // Update totals
-        totalAmount += totalPrice;
-        unitsCount += pages;
-
-        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
-        document.getElementById('unitsCount').textContent = unitsCount;
-
-        // Add print service details to hidden checkout form
-        const checkoutForm = document.getElementById('checkoutForm');
-
-        const serviceInput = document.createElement('input');
-        serviceInput.type = 'hidden';
-        serviceInput.name = 'service_ids[]';
-        serviceInput.value = serviceId;
-        checkoutForm.appendChild(serviceInput);
-
-        const pagesInput = document.createElement('input');
-        pagesInput.type = 'hidden';
-        pagesInput.name = 'pages[]';
-        pagesInput.value = pages;
-        checkoutForm.appendChild(pagesInput);
-
-        const paperTypeInput = document.createElement('input');
-        paperTypeInput.type = 'hidden';
-        paperTypeInput.name = 'paper_type_ids[]';
-        paperTypeInput.value = paperTypeId;
-        checkoutForm.appendChild(paperTypeInput);
-
-        const backToBackInput = document.createElement('input');
-        backToBackInput.type = 'hidden';
-        backToBackInput.name = 'back_to_back[]';
-        backToBackInput.value = backToBack;
-        checkoutForm.appendChild(backToBackInput);
-
-        // Close the modal
-        const printServiceModal = bootstrap.Modal.getInstance(document.getElementById('addPrintServiceModal'));
-        printServiceModal.hide();
 
             // Handle Remove button
         newRow.querySelector('.remove-btn').addEventListener('click', function() {

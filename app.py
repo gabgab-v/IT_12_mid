@@ -581,32 +581,27 @@ def view_transactions():
 def get_daily_sales_with_revenue(selected_date):
     return db.session.query(
         func.sum(
-            db.case(*(
-                # For products: price - original price multiplied by quantity
-                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
-                # For loading transactions: use amount_loaded
-                (Transaction.is_loading, Transaction.amount_loaded),
-                # For print services: total price
-                (Transaction.print_service_id.isnot(None), Transaction.total_price),
-            ), else_=0)
+            db.case(
+                (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),  # Profit for products
+                (Transaction.is_loading == True, Transaction.total_price - Transaction.amount_loaded),  # Profit for loading
+                else_=Transaction.total_price  # Profit for print services or others
+            )
         ).label('total_revenue')
     ).outerjoin(Product, Product.id == Transaction.product_id).filter(
-        func.date(Transaction.timestamp) == selected_date.date()  # Compare only the date
+        func.date(Transaction.timestamp) == selected_date.date()
     ).scalar() or 0
+
 
 
 # Monthly Sales with Revenue
 def get_monthly_sales_with_revenue(selected_date):
     return db.session.query(
         func.sum(
-            db.case(*(
-                # For products: price - original price multiplied by quantity
-                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
-                # For loading transactions: use amount_loaded
-                (Transaction.is_loading, Transaction.amount_loaded),
-                # For print services: total price
-                (Transaction.print_service_id.isnot(None), Transaction.total_price),
-            ), else_=0)
+            db.case(
+                (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),
+                (Transaction.is_loading == True, Transaction.total_price - Transaction.amount_loaded),
+                else_=Transaction.total_price
+            )
         ).label('total_revenue')
     ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         extract('month', Transaction.timestamp) == selected_date.month,
@@ -619,14 +614,11 @@ def get_quarterly_sales_with_revenue(selected_date):
     current_quarter = (selected_date.month - 1) // 3 + 1
     return db.session.query(
         func.sum(
-            db.case(*(
-                # For products: price - original price multiplied by quantity
-                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
-                # For loading transactions: use amount_loaded
-                (Transaction.is_loading, Transaction.amount_loaded),
-                # For print services: total price
-                (Transaction.print_service_id.isnot(None), Transaction.total_price),
-            ), else_=0)
+            db.case(
+                (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),
+                (Transaction.is_loading == True, Transaction.total_price - Transaction.amount_loaded),
+                else_=Transaction.total_price
+            )
         ).label('total_revenue')
     ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
@@ -634,22 +626,21 @@ def get_quarterly_sales_with_revenue(selected_date):
     ).scalar() or 0
 
 
+
 # Yearly Sales with Revenue
 def get_yearly_sales_with_revenue(selected_date):
     return db.session.query(
         func.sum(
-            db.case(*(
-                # For products: price - original price multiplied by quantity
-                (Transaction.product_id.isnot(None), Transaction.quantity * (Product.price - Product.original_price)),
-                # For loading transactions: use amount_loaded
-                (Transaction.is_loading, Transaction.amount_loaded),
-                # For print services: total price
-                (Transaction.print_service_id.isnot(None), Transaction.total_price),
-            ), else_=0)
+            db.case(
+                (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),
+                (Transaction.is_loading == True, Transaction.total_price - Transaction.amount_loaded),
+                else_=Transaction.total_price
+            )
         ).label('total_revenue')
     ).outerjoin(Product, Product.id == Transaction.product_id).filter(
         extract('year', Transaction.timestamp) == selected_date.year
     ).scalar() or 0
+
 
 
 # Sales Route
@@ -945,8 +936,9 @@ def another_dashboard():
     total_stock = db.session.query(func.sum(Product.stock)).scalar() or 0
     total_categories = Category.query.count()
 
-    today = datetime.today().date()
-    thirty_days_ago = today - timedelta(days=30)
+    today = current_ph_timestamp().date()
+    thirty_days_ago = today - timedelta(days=29)
+
 
     # Fetch low stock products (stock < 5, adjust as needed)
     # Fetch low stock products (stock < 5, adjust as needed)
@@ -1276,9 +1268,6 @@ def unified_checkout():
                 back_to_back = back_to_back == 'Yes'
                 print(f"Processing print service {service.service_type} for {page_count} pages (back-to-back: {back_to_back})")
 
-                if back_to_back:
-                    page_count = max(1, page_count // 2)
-
                 # Paper inventory check and deduction
                 paper_inventory = PaperInventory.query.filter_by(id=paper_type_id).first()
                 if paper_inventory.individual_paper_count < page_count:
@@ -1291,7 +1280,8 @@ def unified_checkout():
                 print(f"Paper stock deducted, new count: {paper_inventory.individual_paper_count}")
                 db.session.commit()
 
-                total_price += service.price_per_page * page_count * (0.9 if back_to_back else 1)
+                # If back-to-back, double the price
+                total_price += service.price_per_page * page_count * (2 if back_to_back else 1)
 
                 # Create print transaction
                 new_print_transaction = Transaction(
@@ -1299,7 +1289,7 @@ def unified_checkout():
                     print_service_id=service.id,
                     pages=page_count,
                     back_to_back=back_to_back,
-                    total_price=service.price_per_page * page_count
+                    total_price=service.price_per_page * page_count * (2 if back_to_back else 1)
                 )
                 db.session.add(new_print_transaction)
                 print(f"Print service transaction created for {service.service_type}")
@@ -1651,9 +1641,6 @@ def checkout_print_service():
         if not paper_inventory:
             flash('Selected paper type not found.', 'danger')
             return redirect(url_for('checkout_print_service'))
-
-        # Debug paper inventory
-        print(f"Paper Inventory: {paper_inventory.individual_paper_count} individual sheets, {paper_inventory.rim_count} rims")
 
         # Check if there is sufficient paper stock in individual sheets
         if paper_inventory.individual_paper_count < pages:
