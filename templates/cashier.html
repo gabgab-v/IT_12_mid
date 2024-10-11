@@ -74,8 +74,9 @@
                         <th>Price</th>
                         <th>Quantity</th>
                         <th>Total</th>
+                        <th>Action</th> <!-- New column for the "Remove" button -->
                     </tr>
-                </thead>
+                </thead>                
                 <tbody id="productTableBody">
                     <!-- Filled dynamically by JS -->
                 </tbody>
@@ -149,27 +150,26 @@
             <h4 class="mt-4">Add Loading Service</h4>
             <form id="loadingServiceForm" method="POST" action="{{ url_for('add_loading_service') }}">
                 <div id="balance_display" class="text-center mb-3"></div>
-
+            
                 <div class="form-group mb-3">
                     <label for="amount_loaded">Amount Loaded</label>
                     <input type="number" class="form-control" id="amount_loaded" name="amount_loaded" step="0.01" required oninput="calculateTotal()">
                 </div>
-
+            
                 <div class="form-group mb-3">
                     <label for="service_provider">Service Provider</label>
-                    <select class="form-control" id="service_provider" name="service_provider" onchange="updateBalance()" required>
-                        <option value="Globe">Globe</option>
-                        <option value="Smart">Smart</option>
-                        <option value="GCash">GCash</option>
-                        <option value="PayMaya">PayMaya</option>
+                    <select class="form-control" id="service_provider" name="service_provider[]" onchange="updateBalance()" required>
+                        <option value="globe">Globe</option>
+                        <option value="smart">Smart</option>
+                        <option value="gcash">GCash</option>
                     </select>
                 </div>
-
+            
                 <div class="form-group mb-3">
                     <label for="total_price">Total Price (with transaction fee)</label>
                     <input type="text" class="form-control" id="total_price" name="total_price" readonly>
                 </div>
-
+            
                 <button type="submit" class="btn btn-primary w-100">Process Loading</button>
             </form>
         </div>
@@ -243,7 +243,14 @@ document.getElementById('productForm').addEventListener('submit', function(event
             <td>P ${productPrice.toFixed(2)}</td>
             <td class="product-quantity">${quantity}</td>
             <td class="product-total">P ${totalPrice.toFixed(2)}</td>
+            <td><button class="btn btn-danger btn-sm remove-product" data-product-id="${productId}">Remove</button></td> <!-- New Remove button -->
         `;
+
+        // Add remove button logic
+        newRow.querySelector('.remove-product').addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            removeProduct(productId);
+        });
 
         // Add product details to hidden checkout form
         const checkoutForm = document.getElementById('checkoutForm');
@@ -399,20 +406,22 @@ document.getElementById('productForm').addEventListener('submit', function(event
 
 </script>
 <script>
-    // JavaScript for the loading service modal
     function updateBalance() {
         const serviceProvider = document.getElementById('service_provider').value;
-        const normalBalance = {{ load_balance.normal_load }};
-        const gcashBalance = {{ load_balance.gcash_balance }};
-        
-        const balanceDisplay = document.getElementById('balance_display');
-        if (serviceProvider === 'GCash') {
-            balanceDisplay.innerHTML = `Current GCash Balance: PHP ${gcashBalance.toFixed(2)}`;
-        } else {
-            balanceDisplay.innerHTML = `Current Normal Load Balance: PHP ${normalBalance.toFixed(2)}`;
-        }
+    
+        $.ajax({
+            url: '/get_balance',
+            method: 'GET',
+            data: { provider: serviceProvider },
+            success: function (response) {
+                document.getElementById('balance_display').innerHTML = `Available Balance: P ${response.balance.toFixed(2)}`;
+            },
+            error: function () {
+                document.getElementById('balance_display').innerHTML = 'Unable to fetch balance.';
+            }
+        });
     }
-
+    
     function calculateTotal() {
         const amountLoaded = parseFloat(document.getElementById('amount_loaded').value) || 0;
         const feePercentage = 0.05;
@@ -426,8 +435,9 @@ document.getElementById('productForm').addEventListener('submit', function(event
 
         document.getElementById('total_price').value = totalPrice.toFixed(2);
     }
-
-    $(document).ready(function() {
+</script>
+<script>
+$(document).ready(function() {
     const productSelect = $('#product_id');
     const addButton = $('#addProductButton');
 
@@ -446,14 +456,39 @@ document.getElementById('productForm').addEventListener('submit', function(event
     });
 });
 
-</script>
-<script>
-    $(document).ready(function() {
-        $('#product_id').select2({
-            placeholder: "Select a product",
-            allowClear: true
-        });
+$(document).ready(function() {
+    $('#product_id').select2({
+         placeholder: "Select a product",
+        allowClear: true
     });
+});
+
+function removeProduct(productId) {
+    const productRow = document.querySelector(`tr[data-product-id="${productId}"]`);
+    
+    if (productRow) {
+        const quantity = parseInt(productRow.querySelector('.product-quantity').textContent);
+        const totalPrice = parseFloat(productRow.querySelector('.product-total').textContent.replace('P ', ''));
+
+        // Update totals
+        totalAmount -= totalPrice;
+        unitsCount -= quantity;
+
+        document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+        document.getElementById('unitsCount').textContent = unitsCount;
+
+        // Remove product row
+        productRow.remove();
+
+        // Also remove hidden inputs for this product
+        const productInput = document.querySelector(`input[name="product_ids[]"][data-product-id="${productId}"]`);
+        const quantityInput = document.querySelector(`input[name="quantities[]"][data-product-id="${productId}"]`);
+        
+        if (productInput) productInput.remove();
+        if (quantityInput) quantityInput.remove();
+    }
+}
+
 </script>
 
 

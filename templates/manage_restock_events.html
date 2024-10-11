@@ -69,10 +69,12 @@
                                 <option value="">Select Restock Type</option>
                                 <option value="ink">Ink</option>
                                 <option value="paper">Paper</option>
-                                <option value="load">Load</option>
+                                <option value="smart">Smart Load</option>
+                                <option value="globe">Globe Load</option>
                                 <option value="gcash">Gcash</option>
                             </select>
                         </div>
+                        
 
                         <div class="form-group">
                             <label for="restock_amount">Restock Amount</label>
@@ -130,7 +132,7 @@
             const restockType = document.getElementById('restock_type').value;
             const inkField = document.getElementById('ink-type-field');
             const paperField = document.getElementById('paper-type-field');
-
+            
             // Hide all fields initially
             inkField.style.display = 'none';
             paperField.style.display = 'none';
@@ -140,7 +142,9 @@
             } else if (restockType === 'paper') {
                 paperField.style.display = 'block';
             }
+            // No additional fields for Smart, Globe, and GCash restock types
         }
+
     </script>
 
 </body>

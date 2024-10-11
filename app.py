@@ -155,18 +155,21 @@ class LoadingTransaction(db.Model):
 
 class LoadBalance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    normal_load = db.Column(db.Float, nullable=False, default=0.0)  # Track normal load balance
+    smart_balance = db.Column(db.Float, nullable=False, default=0.0)  # Track Smart balance
+    globe_balance = db.Column(db.Float, nullable=False, default=0.0)  # Track Globe balance
     gcash_balance = db.Column(db.Float, nullable=False, default=0.0)  # Track GCash balance
 
     def __repr__(self):
-        return f"LoadBalance('Normal Load: {self.normal_load}', 'GCash: {self.gcash_balance}')"
+        return (f"LoadBalance('Smart Load: {self.smart_balance}', "
+                f"'Globe Load: {self.globe_balance}', "
+                f"'GCash: {self.gcash_balance}')")
+
 
 
 class PrintService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     service_type = db.Column(db.String(100), nullable=False)  # e.g., 'Photocopy', 'Black and White Print'
     price_per_page = db.Column(db.Float, nullable=False)
-    admin_price_override = db.Column(db.Float, nullable=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     def __repr__(self):
@@ -965,13 +968,14 @@ def another_dashboard():
     ).group_by(func.date(Transaction.timestamp)).all()
 
     # Fetch profit data (for product: price - cost, for others: total_price)
+    # Modifying to include fee increase for loading transactions only
     profit_data = db.session.query(
         func.date(Transaction.timestamp),
         func.sum(
-            db.case(*(
-                    (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),
-            ),
-                else_=Transaction.total_price
+            db.case(
+                (Transaction.product_id.isnot(None), Transaction.total_price - (Transaction.quantity * Product.original_price)),  # Profit for products
+                (Transaction.is_loading == True, Transaction.total_price - Transaction.amount_loaded),  # Increase for loading transactions
+                else_=Transaction.total_price  # Profit for other transactions
             )
         )
     ).join(Product, isouter=True).filter(
@@ -1041,7 +1045,7 @@ def another_dashboard():
         past_30_days_labels=past_30_days_labels,
         daily_sales_data=daily_sales_data,
         daily_revenue_data=daily_revenue_data,
-        daily_profit_data=daily_profit_data
+        daily_profit_data=daily_profit_data  # Pass updated daily profit data
     )
 
 
@@ -1216,21 +1220,28 @@ def unified_checkout():
     try:
         # Begin a single database transaction
         total_price = 0
+        print("Checkout process started")
 
         # Handle Product Checkout
         product_ids = request.form.getlist('product_ids[]')
         quantities = request.form.getlist('quantities[]')
+        print(f"Product IDs: {product_ids}, Quantities: {quantities}")
+
         if product_ids and quantities:
             for product_id, quantity in zip(product_ids, quantities):
                 product = Product.query.get(product_id)
                 quantity = int(quantity)
+                print(f"Processing product {product.name} (ID: {product_id}), Quantity: {quantity}")
+
                 if product.stock < quantity:
                     flash(f'Not enough stock for {product.name}', 'danger')
+                    print(f"Not enough stock for {product.name}")
                     return redirect(url_for('cashier'))  # Back to cashier on error
 
                 # Deduct stock
                 product.stock -= quantity
                 total_price += product.price * quantity
+                print(f"Stock deducted for {product.name}, new stock: {product.stock}")
 
                 # Create product transaction
                 new_product_transaction = Transaction(
@@ -1240,8 +1251,9 @@ def unified_checkout():
                     total_price=product.price * quantity
                 )
                 db.session.add(new_product_transaction)
+                print(f"Product transaction created for {product.name}")
         
-        print('Form data:', request.form)
+        print('Form data for products:', request.form)
 
         # Handle Print Service Checkout
         service_ids = request.form.getlist('service_ids[]')
@@ -1249,11 +1261,14 @@ def unified_checkout():
         paper_type_ids = request.form.getlist('paper_type_ids[]')
         back_to_back_list = request.form.getlist('back_to_back[]')
 
+        print(f"Service IDs: {service_ids}, Pages: {pages}, Paper Type IDs: {paper_type_ids}, Back-to-back: {back_to_back_list}")
+
         if service_ids and pages:
             for service_id, page_count, paper_type_id, back_to_back in zip(service_ids, pages, paper_type_ids, back_to_back_list):
                 service = PrintService.query.get(service_id)
                 page_count = int(page_count)
                 back_to_back = back_to_back == 'Yes'
+                print(f"Processing print service {service.service_type} for {page_count} pages (back-to-back: {back_to_back})")
 
                 if back_to_back:
                     page_count = max(1, page_count // 2)
@@ -1262,10 +1277,12 @@ def unified_checkout():
                 paper_inventory = PaperInventory.query.filter_by(id=paper_type_id).first()
                 if paper_inventory.individual_paper_count < page_count:
                     flash('Not enough paper in stock!', 'danger')
+                    print("Not enough paper in stock")
                     return redirect(url_for('cashier'))
 
                 # Deduct paper stock
                 paper_inventory.individual_paper_count -= page_count
+                print(f"Paper stock deducted, new count: {paper_inventory.individual_paper_count}")
                 db.session.commit()
 
                 total_price += service.price_per_page * page_count * (0.9 if back_to_back else 1)
@@ -1279,99 +1296,105 @@ def unified_checkout():
                     total_price=service.price_per_page * page_count
                 )
                 db.session.add(new_print_transaction)
+                print(f"Print service transaction created for {service.service_type}")
 
         # Handle Load Transaction
         service_providers = request.form.getlist('service_providers[]')
         amount_loaded_list = request.form.getlist('amount_loaded[]')
         total_price_list = request.form.getlist('total_price[]')
 
-        # Debugging: Print form data for load transactions
         print('Loading Services:', service_providers, amount_loaded_list, total_price_list)
 
-        # Fetch the LoadBalance record, or create one if it doesn't exist
         load_balance = LoadBalance.query.first()
         if load_balance is None:
-            # If no LoadBalance exists, initialize with 0 for both types of balances
-            load_balance = LoadBalance(normal_load=0.0, gcash_balance=0.0)
+            print("No load balance found, initializing...")
+            load_balance = LoadBalance(smart_balance=0.0, globe_balance=0.0, gcash_balance=0.0)
             db.session.add(load_balance)
-            db.session.commit()  # Save the new LoadBalance record
+            db.session.commit()
 
-        # Check if there's any load transaction data
         if amount_loaded_list and service_providers:
             for amount_loaded_str, provider in zip(amount_loaded_list, service_providers):
-                print("Processing load transactions...")
+                print(f"Processing load for {provider} with amount {amount_loaded_str}")
                 try:
-                    # Convert the loaded amount to float and validate
                     amount_loaded = float(amount_loaded_str)
                     if amount_loaded <= 0:
                         raise ValueError("Amount must be greater than zero.")
-                except ValueError:
-                    # If invalid, flash an error message and redirect to cashier page
+                except ValueError as e:
                     flash("Invalid load amount entered.", "danger")
+                    print(f"Error: {e}")
                     return redirect(url_for('cashier'))
 
-                # Determine the balance to check based on the service provider
-                if provider == "GCash":
+                if provider == "gcash":
                     balance = load_balance.gcash_balance
+                elif provider == "smart":
+                    balance = load_balance.smart_balance
+                elif provider == "globe":
+                    balance = load_balance.globe_balance
                 else:
-                    balance = load_balance.normal_load
+                    flash(f"Unknown service provider: {provider}", "danger")
+                    print(f"Unknown provider: {provider}")
+                    return redirect(url_for('cashier'))
 
-                # Check if there's enough balance for the transaction
                 if balance < amount_loaded:
                     flash(f"Insufficient {provider} balance", "danger")
+                    print(f"Insufficient balance for {provider}")
                     return redirect(url_for('cashier'))
 
-                # Calculate the total price with any additional fees
                 if amount_loaded >= 1000:
-                    # Apply a 2% increase for transactions >= 1000
                     total_price_with_fee = amount_loaded + (amount_loaded * 0.02)
                 else:
-                    # Apply a fixed 5 PHP charge for transactions < 1000
                     total_price_with_fee = amount_loaded + 5
 
-                # Deduct only the original loaded amount from the corresponding balance
-                if provider == "GCash":
-                    load_balance.gcash_balance -= amount_loaded  # Deduct for GCash
-                else:
-                    load_balance.normal_load -= amount_loaded  # Deduct for normal load
+                if provider == "gcash":
+                    load_balance.gcash_balance -= amount_loaded
+                elif provider == "smart":
+                    load_balance.smart_balance -= amount_loaded
+                elif provider == "globe":
+                    load_balance.globe_balance -= amount_loaded
 
-                # Commit the balance update
                 db.session.commit()
-                print("Trying to add transaction")
-                # Create a new load transaction
-                try:
-                    # Create a new load transaction
-                    new_load_transaction = Transaction(
-                        user_id=current_user.id,  # Logged-in user's ID
-                        amount_loaded=amount_loaded,  # Original loaded amount
-                        service_provider=provider,  # Provider (GCash, Globe, etc.)
-                        total_price=total_price_with_fee,  # Total price including any fees
-                        is_loading=True  # Mark this as a loading transaction
-                    )
-                    db.session.add(new_load_transaction)
-                    print("Added transaction to the session")
-                    db.session.commit()  # Commit the transaction to the database
-                    print("Transaction committed")
-                except Exception as e:
-                    print(f"Error when adding or committing transaction: {e}")
-                    db.session.rollback()  # Rollback in case of an error
-                    flash("Error adding transaction", "danger")
 
+                print("Adding load transaction to the session")
+                new_load_transaction = Transaction(
+                    user_id=current_user.id,
+                    amount_loaded=amount_loaded,
+                    service_provider=provider,
+                    total_price=total_price_with_fee,
+                    is_loading=True
+                )
+                db.session.add(new_load_transaction)
+                print("Load transaction added")
+                db.session.commit()
+                print("Load transaction committed")
 
-                # Add the total price to the overall checkout total
                 total_price += total_price_with_fee
 
-        # Commit all changes to the database (both balances and transactions)
+        print(f"Total price calculated: P{total_price}")
         db.session.commit()
-
         flash(f'Checkout successful! Total price: P{total_price}', 'success')
         return redirect(url_for('cashier'))
 
     except Exception as e:
-        # Rollback the transaction in case of any error
         db.session.rollback()
         flash(f'Error during checkout: {str(e)}', 'danger')
+        print(f"Error occurred: {e}")
         return redirect(url_for('cashier'))
+
+@app.route('/get_balance', methods=['GET'])
+def get_balance():
+    provider = request.args.get('provider')
+    # Logic to fetch balance for the provider
+    if provider == 'gcash':
+        balance = LoadBalance.query.first().gcash_balance
+    elif provider == 'smart':
+        balance = LoadBalance.query.first().smart_balance
+    elif provider == 'globe':
+        balance = LoadBalance.query.first().globe_balance
+    else:
+        return jsonify({'error': 'Invalid provider'}), 400
+
+    return jsonify({'balance': balance})
+
 
 
 # Manage Loading Services
@@ -1379,11 +1402,27 @@ def unified_checkout():
 def manage_loading_services():
     loading_transactions = LoadingTransaction.query.all()
     load_balance = LoadBalance.query.first()
-    restocks = Restock.query.filter(Restock.inventory_type.in_(['load', 'gcash'])).all()
-    return render_template('manage_loading_services.html', loading_transactions=loading_transactions,
-                                   normal_load=load_balance.normal_load,
-        gcash_balance=load_balance.gcash_balance,
-        restocks=restocks)
+    print('Fetched Load Balance:', load_balance.gcash_balance, load_balance.smart_balance, load_balance.globe_balance)
+
+    if load_balance is None:
+        # Initialize load balances to 0 if no LoadBalance record exists
+        smart_balance = 0.0
+        globe_balance = 0.0
+        gcash_balance = 0.0
+    else:
+        smart_balance = load_balance.smart_balance
+        globe_balance = load_balance.globe_balance
+        gcash_balance = load_balance.gcash_balance
+
+    restocks = Restock.query.filter(Restock.inventory_type.in_(['globe', 'smart', 'gcash'])).all()
+    return render_template('manage_loading_services.html', 
+                           loading_transactions=loading_transactions,
+                           smart_balance=smart_balance,
+                           globe_balance=globe_balance,
+                           gcash_balance=gcash_balance,
+                           restocks=restocks)
+
+
 
 @app.route('/add-loading-transaction', methods=['GET', 'POST'])
 def add_loading_transaction():
@@ -1791,19 +1830,12 @@ def add_print_service():
     if request.method == 'POST':
         service_type = request.form.get('service_type')
         price_per_page = request.form.get('price_per_page')
-        admin_price_override = request.form.get('admin_price_override')
-
-        if admin_price_override == '':
-            admin_price_override = None
-        else:
-            admin_price_override = float(admin_price_override)  # Convert to float if it's not empty
 
         
         # Create new service
         new_service = PrintService(
             service_type=service_type,
             price_per_page=price_per_page,
-            admin_price_override=admin_price_override
         )
         db.session.add(new_service)
         db.session.commit()
@@ -1979,18 +2011,22 @@ def add_restock():
             db.session.add(ink_inventory)
 
     # Handle load and GCash restocks
-    elif restock_type in ['load', 'gcash']:
+    elif restock_type in ['globe', 'smart', 'load', 'gcash']:
         load_balance = LoadBalance.query.first()
 
         if load_balance is None:
-            load_balance = LoadBalance(normal_load=0.0, gcash_balance=0.0)
+            load_balance = LoadBalance(smart_balance=0.0, globe_balance=0.0, gcash_balance=0.0)
             db.session.add(load_balance)
             db.session.commit()
 
-        if restock_type == 'load':
-            load_balance.normal_load += restock_amount
+
+        if restock_type == 'smart':
+            load_balance.smart_balance += restock_amount
+        elif restock_type == 'globe':
+            load_balance.globe_balance += restock_amount
         elif restock_type == 'gcash':
             load_balance.gcash_balance += restock_amount
+
 
     # Commit changes to the database
     db.session.commit()
