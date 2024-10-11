@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Transactions</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+{% extends "base.html" %}
+
+{% block title %}View Transactions{% endblock %}
+
+{% block content %}
     <style>
         .scrollable-table {
             max-height: 400px; /* Adjust as needed */
@@ -18,14 +16,13 @@
             z-index: 1;
         }
     </style>
-</head>
-<body>
+
     <div class="container mt-5">
-        <h1 class="text-center">View All Transactions</h1>
+        <h1 class="text-center display-4">Manage Users</h1>
         <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
 
         <!-- Product Transactions Table -->
-        <h3 class="text-center">Product Transactions</h3>
+        <h3 class="text-center display-6">Product Transactions</h3>
         <div class="scrollable-table">
             <table class="table table-bordered">
                 <thead>
@@ -52,7 +49,7 @@
         </div>
 
         <!-- Loading Transactions Table -->
-        <h3 class="text-center mt-5">Loading Transactions</h3>
+        <h3 class="text-center mt-5 display-6">Loading Transactions</h3>
         <div class="scrollable-table">
             <table class="table table-bordered">
                 <thead>
@@ -79,7 +76,7 @@
         </div>
 
         <!-- Print Service Transactions Table -->
-        <h3 class="text-center mt-5">Print Transactions</h3>
+        <h3 class="text-center mt-5 display-6">Print Transactions</h3>
         <div class="scrollable-table">
             <table class="table table-bordered">
                 <thead>
@@ -108,5 +105,4 @@
         </div>
 
     </div>
-</body>
-</html>
+    {% endblock %}

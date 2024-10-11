@@ -6,6 +6,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import extract, func
 import pytz
+from flask_migrate import Migrate
 
 PH_TZ = pytz.timezone('Asia/Manila')
 
@@ -21,6 +22,7 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # No need for 'main_routes.login'
+migrate = Migrate(app, db)
 
 # User model
 class User(db.Model, UserMixin):
@@ -29,9 +31,10 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # 'admin', 'cashier', 'inventory'
+    is_archived = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
-        return f"User('{self.username}', '{self.email}', '{self.role}')"
+        return f"User('{self.username}', '{self.email}', '{self.role}', Archived: {self.is_archived})"
 
 
 class Category(db.Model):
@@ -277,6 +280,7 @@ def admin_required(f):
     return decorated_function
 
 # Routes
+@app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -416,8 +420,9 @@ def sidebar():
 @login_required
 @admin_required
 def manage_users():
-    users = User.query.all()
-    return render_template('manage_users.html', users=users)
+    active_users = User.query.filter_by(is_archived=False).all()
+    return render_template('manage_users.html', users=active_users)
+
 
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -441,10 +446,32 @@ def edit_user(user_id):
 @admin_required
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
-    db.session.delete(user)
+    user.is_archived = True  # Mark the user as archived
     db.session.commit()
-    flash('User deleted successfully!', 'success')
+    flash('User archived successfully!', 'success')
     return redirect(url_for('manage_users'))
+
+@app.route('/restore_user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def restore_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.is_archived:
+        user.is_archived = False
+        db.session.commit()
+        flash('User restored successfully!', 'success')
+    else:
+        flash('User is already active.', 'warning')
+    return redirect(url_for('manage_users'))
+
+
+@app.route('/archived_users')
+@login_required
+@admin_required
+def archived_users():
+    archived_users = User.query.filter_by(is_archived=True).all()
+    return render_template('archived_users.html', users=archived_users)
+
 
 
 @app.route('/manage_products')
@@ -459,22 +486,25 @@ def manage_products():
 def search_products():
     search_name = request.args.get('search_name', '').strip()
     search_category = request.args.get('search_category', '').strip()
+    search_brand = request.args.get('search_brand', '').strip()  # New brand filter
 
     query = Product.query.filter_by(is_voided=False, deleted=False)
-    
+
     if search_name:
         query = query.filter(Product.name.ilike(f"%{search_name}%"))
     if search_category:
         query = query.join(Category).filter(Category.name.ilike(f"%{search_category}%"))
+    if search_brand:
+        query = query.filter(Product.brand.ilike(f"%{search_brand}%"))  # Apply brand filter
 
     products = query.all()
-    
-    # Convert to JSON serializable format
+
     products_data = [
         {
             'id': product.id,
             'name': product.name,
             'category': product.category.name,
+            'brand': product.brand,  # Include brand
             'stock': product.stock,
             'price': product.price,
             'original_price': product.original_price,
@@ -484,6 +514,7 @@ def search_products():
     ]
 
     return jsonify(products_data)
+
 
 
 # Route to display the restock form and log restocks
@@ -570,10 +601,6 @@ def view_transactions():
                            product_transactions=product_transactions, 
                            loading_transactions=loading_transactions,
                            print_transactions=print_transactions)  # Pass print transactions
-
-
-
-
 
 # SALES REPORT
 
