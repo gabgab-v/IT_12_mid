@@ -941,7 +941,7 @@ def delete_category(category_id):
 # kada transaction like sas products nahalin kay 20 tapos ma add sa transaction table ana
 @app.route('/another_dashboard')
 def another_dashboard():
-    total_products = Product.query.count()
+    total_products = Product.query.filter_by(deleted=False, is_voided=False).count()
     total_stock = db.session.query(func.sum(Product.stock)).scalar() or 0
     total_categories = Category.query.count()
 
@@ -949,7 +949,13 @@ def another_dashboard():
     thirty_days_ago = today - timedelta(days=30)
 
     # Fetch low stock products (stock < 5, adjust as needed)
-    low_stock_products = db.session.query(Product.id, Product.name, Product.stock).filter(Product.stock < 5).all()
+    # Fetch low stock products (stock < 5, adjust as needed)
+    low_stock_products = db.session.query(Product.id, Product.name, Product.stock).filter(
+        Product.stock < 5,
+        Product.deleted == False,  # Exclude deleted products
+        Product.is_voided == False  # Exclude voided products
+    ).all()
+
 
     # Fetch daily transaction count (instead of summing quantities)
     sales_data = db.session.query(

@@ -43,6 +43,29 @@
         input[type="number"], select {
             padding: 5px;
         }
+                /* Make the product table body scrollable */
+                #productTableBody {
+            display: block;
+            max-height: 200px;  /* Set the maximum height you prefer */
+            overflow-y: auto;   /* Enable vertical scrolling */
+            overflow-x: hidden; /* Disable horizontal scrolling */
+        }
+
+        /* Ensure the table headers and rows align correctly */
+        table thead, table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed; /* Fix table layout */
+        }
+
+        /* Hide the scrollbar */
+        #productTableBody::-webkit-scrollbar {
+            display: none; /* For Chrome, Safari, and Edge */
+        }
+        #productTableBody {
+            -ms-overflow-style: none; /* For Internet Explorer and Edge */
+            scrollbar-width: none;    /* For Firefox */
+        }
     </style>
 </head>
 <body>
@@ -64,6 +87,21 @@
     </div>
 
     <div class="row">
+        <!-- Total Panel -->
+        <div class="row">
+            <div class="col-md-12 total-panel">
+                <h3>Total</h3>
+                <p>Units: <span id="unitsCount">0</span></p>
+                <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
+                
+                <div class="action-buttons">
+                    <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
+                        <button type="submit" class="btn btn-success w-100">Checkout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Transaction Panel -->
         <div class="col-md-7 transaction-panel mb-3">
             <h3>Product List</h3>
@@ -175,20 +213,6 @@
         </div>
     </div>
 
-    <!-- Total Panel -->
-    <div class="row">
-        <div class="col-md-12 total-panel">
-            <h3>Total</h3>
-            <p>Units: <span id="unitsCount">0</span></p>
-            <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
-            
-            <div class="action-buttons">
-                <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
-                    <button type="submit" class="btn btn-success w-100">Checkout</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 
@@ -301,7 +325,14 @@ document.getElementById('productForm').addEventListener('submit', function(event
             <td>P ${servicePrice.toFixed(2)}</td>
             <td>${pages}</td>
             <td>P ${totalPrice.toFixed(2)}</td>
+            <td><button class="btn btn-danger btn-sm remove-btn">Remove</button></td>
         `;
+
+        newRow.querySelector('.remove-btn').addEventListener('click', function() {
+        const rowIndex = this.parentNode.parentNode.rowIndex;
+        removePrintRow(rowIndex, totalPrice, pages);
+        });
+
 
         // Update totals
         totalAmount += totalPrice;
@@ -340,6 +371,15 @@ document.getElementById('productForm').addEventListener('submit', function(event
         // Close the modal
         const printServiceModal = bootstrap.Modal.getInstance(document.getElementById('addPrintServiceModal'));
         printServiceModal.hide();
+
+            // Handle Remove button
+        newRow.querySelector('.remove-btn').addEventListener('click', function() {
+            productTable.deleteRow(rowIndex - 1);
+            totalAmount -= totalPrice;
+            unitsCount -= pages;
+            document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+            document.getElementById('unitsCount').textContent = unitsCount;
+        });
     });
 
     document.getElementById('loadingServiceForm').addEventListener('submit', function(event) {
@@ -369,7 +409,14 @@ document.getElementById('productForm').addEventListener('submit', function(event
         <td>P ${amountLoaded.toFixed(2)}</td>
         <td>1</td>
         <td>P ${totalPrice.toFixed(2)}</td>
+        <td><button class="btn btn-danger btn-sm remove-btn">Remove</button></td>
     `;
+
+    newRow.querySelector('.remove-btn').addEventListener('click', function() {
+    const rowIndex = this.parentNode.parentNode.rowIndex;
+    removeLoadRow(rowIndex, totalPrice);
+    });
+
 
     // Update totals
     totalAmount += totalPrice;
@@ -487,6 +534,34 @@ function removeProduct(productId) {
         if (productInput) productInput.remove();
         if (quantityInput) quantityInput.remove();
     }
+}
+
+function removePrintRow(rowIndex, totalPrice, pages) {
+    const productTable = document.getElementById('productTableBody');
+    
+    // Remove the row
+    productTable.deleteRow(rowIndex - 1);
+    
+    // Update totals
+    totalAmount -= totalPrice;
+    unitsCount -= pages;
+
+    document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+    document.getElementById('unitsCount').textContent = unitsCount;
+}
+
+function removeLoadRow(rowIndex, totalPrice) {
+    const productTable = document.getElementById('productTableBody');
+
+    // Remove the row
+    productTable.deleteRow(rowIndex - 1);
+    
+    // Update totals
+    totalAmount -= totalPrice;
+    unitsCount -= 1;
+
+    document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
+    document.getElementById('unitsCount').textContent = unitsCount;
 }
 
 </script>
