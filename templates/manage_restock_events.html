@@ -20,7 +20,7 @@
         <a href="{{ url_for('restock_products') }}" class="btn btn-primary mb-3">Restock Products</a>
 
         {% if current_user.role == 'admin' or current_user.role == 'purchaser' %}
-        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addRestockModal">Add Restock Event</button>
+        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addRestockModal">Restock Supplies</button>
         {% endif %}
         <table class="table table-bordered">
             <thead>

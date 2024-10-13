@@ -164,7 +164,6 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Restock Amount</th>
-                                <th>Restock Location</th>
                                 <th>Amount Spent</th>
                                 <th>Restock Type</th>
                                 <th>Date/Time</th>
@@ -175,7 +174,6 @@
                             <tr>
                                 <td>{{ restock.id }}</td>
                                 <td>{{ restock.restock_amount }}</td>
-                                <td>{{ restock.restock_location }}</td>
                                 <td>{{ restock.amount_spent }}</td>
                                 <td>{{ restock.inventory_type }}</td>
                                 <td>{{ restock.restock_date }}</td>
@@ -370,7 +368,6 @@
                                     <th>Ink Type</th>
                                     <th>Stock</th>
                                     <th>Total Amount Spent</th>
-                                    <th>Purchase Location</th>
                                     <th>Last Restock Date</th>
                                 </tr>
                             </thead>
@@ -380,7 +377,6 @@
                                     <td>{{ ink.name }}</td>
                                     <td>{{ ink.stock }}</td>
                                     <td>₱{{ ink.amount_spent }}</td>
-                                    <td>{{ ink.purchase_location }}</td>
                                     <td>{{ ink.last_restock_date }}</td>
                                 </tr>
                                 {% endfor %}
