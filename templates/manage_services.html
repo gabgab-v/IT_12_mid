@@ -3,152 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Management Interface</title>
+    <title>Manage Services</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center">Unified Management Interface</h1>
-        
-        <!-- Dashboard Navigation Links -->
-        <nav class="mb-3">
-            <ul class="nav nav-pills">
-                <li class="nav-item">
-                    <a class="nav-link active" id="manage-products-tab" href="#manage-products" data-toggle="tab">Manage Products</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="manage-loading-tab" href="#manage-loading" data-toggle="tab">Manage Loading Services</a>
-                </li>
-                <!-- Future tabs can go here, e.g., Manage Printing -->
-            </ul>
+    <div class="container-fluid">
+        <div class="row">
+        <!-- Top Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
+            <div class="container-fluid">
+                <a href="{{ url_for('another_dashboard') }}" class="navbar-brand">Back to Dashboard</a>
+
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#products">Manage Products</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#loading-services">Manage Loading Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#printing-services">Manage Printing Services</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </nav>
 
-        <!-- Tab Content -->
-        <div class="tab-content">
-            
-            <!-- Manage Products Section -->
-            <div class="tab-pane fade show active" id="manage-products">
-                <h2>Manage Products</h2>
-                <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
-                {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
-                <a href="{{ url_for('add_product') }}" class="btn btn-secondary mb-3">Add Items</a>
-                {% endif %}
-                {% if current_user.role == 'admin' %}
-                <a href="{{ url_for('manage_archived_products') }}" class="btn btn-secondary mb-3">View Archived Products</a>
-                <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary mb-3">Manage Categories</a>
-                {% endif %}
 
-                <!-- Search Form for Products -->
-                <form class="form-inline mb-3">
-                    <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
-                    <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
-                    <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">  <!-- Brand Filter -->
-                </form>
+            <!-- Main Content -->
+            <main role="main" class="container-fluid px-4">
+                <h1 class="text-center mt-4">Manage All Services</h1>
 
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Brand</th>
-                            <th>Stock</th>
-                            <th>Store Price</th>
-                            <th>Original Price</th>
-                            <th>Expiration Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="products_table">
-                        {% for product in products %}
-                        <tr>
-                            <td>{{ product.name }}</td>
-                            <td>{{ product.category.name }}</td>
-                            <td>{{ product.brand }}</td>
-                            <td>{{ product.stock }}</td>
-                            <td>{{ product.price }}</td>
-                            <td>{{ product.original_price }}</td>
-                            <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
-                            <td>
-                                {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
-                                <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">Update</a>
-                                <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
-                                </form>
-                                {% endif %}
-                                {% if current_user.role == 'admin' %}
-                                <form action="{{ url_for('reduce_stock', product_id=product.id) }}" method="POST" style="display: inline;">
-                                    <input type="number" name="reduce_quantity" min="1" max="{{ product.stock }}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
-                                    <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
-                                </form>
-                                {% endif %}
-                                {% if current_user.role == 'admin' or current_user.role == 'supplybuyer' %}
-                                <a href="{{ url_for('restock_product', product_id=product.id) }}" class="btn btn-primary btn-sm">Restock</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <!-- Manage Products Section -->
+                <section id="products" class="mt-5">                                         
+                    <div class="container mt-5">
+                        <h1 class="text-center">Manage Products</h1>
+                        {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
+                        <a href="{{ url_for('add_product') }}" class="btn btn-secondary mb-3">Add Items</a>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('manage_archived_products') }}" class="btn btn-secondary mb-3">View Archived Products</a>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary mb-3">Manage Categories</a>
+                        {% endif %}
 
-            <!-- Manage Loading Services Section -->
-            <div class="tab-pane fade" id="manage-loading">
-                <h2>Manage Loading Services</h2>
-                <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+                        <!-- Search Form -->
+                        <form class="form-inline mb-3">
+                            <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
+                            <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
+                            <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">  <!-- New Brand Search Field -->
+                        </form>
 
-                <!-- Load Balance Display -->
-                <div class="alert alert-info">
-                    <h4>Current Smart Balance: {{ smart_balance }}</h4>
-                    <h4>Current Globe Balance: {{ globe_balance }}</h4>
-                    <h4>Current GCash Balance: {{ gcash_balance }}</h4>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Brand</th>
+                                    <th>Stock</th>
+                                    <th>Store Price</th>
+                                    <th>Original Price</th>
+                                    <th>Expiration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products_table">
+                                {% for product in products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>{{ product.brand }}</td> <!-- Added Brand here -->
+                                    <td>{{ product.stock }}</td>
+                                    <td>{{ product.price }}</td>
+                                    <td>{{ product.original_price }}</td>
+                                    <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
+                                    <td>
+                                        {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
+                                        <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">Update</a>
+                                        <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
+                                        </form>
+                                        {% endif %}
+                                        {% if current_user.role == 'admin' %}
+                                        <form action="{{ url_for('reduce_stock', product_id=product.id) }}" method="POST" style="display: inline;">
+                                            <input type="number" name="reduce_quantity" min="1" max="{{ product.stock }}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
+                                            <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <script>
+                        function fetchFilteredProducts() {
+                            const searchName = document.getElementById('search_name').value;
+                            const searchCategory = document.getElementById('search_category').value;
+                            const searchBrand = document.getElementById('search_brand').value;
+
+                            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}&search_brand=${searchBrand}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const tableBody = document.getElementById('products_table');
+                                    tableBody.innerHTML = '';  // Clear current rows
+
+                                    data.forEach(product => {
+                                        const row = `
+                                            <tr>
+                                                <td>${product.name}</td>
+                                                <td>${product.category}</td>
+                                                <td>${product.brand}</td>
+                                                <td>${product.stock}</td>
+                                                <td>${product.price}</td>
+                                                <td>${product.original_price}</td>
+                                                <td>${product.expiration_date || 'N/A'}</td>
+                                                <td>
+                                                    <a href="/edit_product/${product.id}" class="btn btn-warning btn-sm">Edit</a>
+                                                    <form action="/delete_product/${product.id}" method="POST" style="display: inline;">
+                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
+                                                    </form>
+                                                    <form action="/reduce_stock/${product.id}" method="POST" style="display: inline;">
+                                                        <input type="number" name="reduce_quantity" min="1" max="${product.stock}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
+                                                        <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        `;
+                                        tableBody.insertAdjacentHTML('beforeend', row);
+                                    });
+                                });
+                        }
+
+                        document.getElementById('search_name').addEventListener('input', fetchFilteredProducts);
+                        document.getElementById('search_category').addEventListener('input', fetchFilteredProducts);
+                        document.getElementById('search_brand').addEventListener('input', fetchFilteredProducts);
+                    </script>
+                </section>
+
+                <!-- Manage Loading Services Section -->
+                <section id="loading-services" class="mt-5">
+                    <h2>Manage Loading Services</h2>
+                    <!-- Load Balance Display -->
+                    <div class="alert alert-info">
+                        <h4>Current Smart Balance: {{ smart_balance }}</h4>
+                        <h4>Current Globe Balance: {{ globe_balance }}</h4>
+                        <h4>Current GCash Balance: {{ gcash_balance }}</h4>
+                    </div>
+
+                    <!-- Table of Restocks -->
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Restock Amount</th>
+                                <th>Restock Location</th>
+                                <th>Amount Spent</th>
+                                <th>Restock Type</th>
+                                <th>Date/Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for restock in restocks %}
+                            <tr>
+                                <td>{{ restock.id }}</td>
+                                <td>{{ restock.restock_amount }}</td>
+                                <td>{{ restock.restock_location }}</td>
+                                <td>{{ restock.amount_spent }}</td>
+                                <td>{{ restock.inventory_type }}</td>
+                                <td>{{ restock.restock_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                </section>
 
-                <!-- Table of Restocks -->
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Restock Amount</th>
-                            <th>Restock Location</th>
-                            <th>Amount Spent</th>
-                            <th>Restock Type</th>
-                            <th>Date/Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for restock in restocks %}
-                        <tr>
-                            <td>{{ restock.id }}</td>
-                            <td>{{ restock.restock_amount }}</td>
-                            <td>{{ restock.restock_location }}</td>
-                            <td>{{ restock.amount_spent }}</td>
-                            <td>{{ restock.inventory_type }}</td>
-                            <td>{{ restock.restock_date }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <!-- Manage Printing Services Section -->
+                <section id="printing-services" class="mt-5">
+                    <div class="container mt-5">
+                        <h2>Manage Printing Services</h2>
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('add_print_service') }}" class="btn btn-secondary mb-3">Add Print Service</a>
+                        {% endif %}
+                        <!-- <a href="{{ url_for('checkout_print_service') }}" class="btn btn-secondary mb-3">Checkout Print Service</a> -->
 
+                        {% if current_user.role == 'admin' %}
+                        <!-- Button to trigger Ink Type Modal -->
+                        <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#inkTypeModal">
+                            Add Ink Type
+                        </button>
+                        {% endif %}
+
+                        {% if current_user.role == 'admin' %}
+                        <!-- Button to trigger Paper Type Modal -->
+                        <button type="button" class="btn btn-secondary mb-3" data-toggle="modal" data-target="#paperTypeModal">
+                            Add Paper Type
+                        </button>
+                        {% endif %}
+
+                        <!-- Print Service Modal -->
+                        <div class="modal fade" id="printServiceModal" tabindex="-1" role="dialog" aria-labelledby="printServiceModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="printServiceModalLabel">Add Print Service</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form id="printServiceForm" method="POST" action="{{ url_for('checkout_print_service') }}">
+                                        <div class="modal-body">
+                                            <div class="form-group mb-3">
+                                                <label for="service_id">Print Service</label>
+                                                <select id="service_id" name="service_id" class="form-control" required>
+                                                    {% for service in print_services %}
+                                                        <option value="{{ service.id }}">{{ service.service_type }} - P{{ service.price_per_page }} per page</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label for="pages">Number of Pages</label>
+                                                <input type="number" id="pages" name="pages" class="form-control" required>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label for="paper_type_id">Paper Type</label>
+                                                <select id="paper_type_id" name="paper_type_id" class="form-control" required>
+                                                    {% for paper in paper_types %}
+                                                        <option value="{{ paper.id }}">{{ paper.paper_type }} - P{{ paper.price_per_sheet }} per sheet</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group form-check mb-3">
+                                                <input type="checkbox" id="back_to_back" name="back_to_back" class="form-check-input" value="1">
+                                                <label for="back_to_back" class="form-check-label">Back-to-Back Printing?</label>
+                                            </div>
+
+                                            <div class="form-group form-check mb-3">
+                                                <input type="checkbox" id="void_transaction" name="void_transaction" class="form-check-input" value="1">
+                                                <label for="void_transaction" class="form-check-label">Void Transaction (Deduct stock, no sales log)</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-primary">Add Print Service</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ink Type Modal -->
+                        <div class="modal fade" id="inkTypeModal" tabindex="-1" role="dialog" aria-labelledby="inkTypeModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h5 class="modal-title" id="inkTypeModalLabel">Add New Ink Type</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                </div>
+                                <form action="{{ url_for('add_ink_type') }}" method="POST">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                    <label for="new_ink_type_name">Ink Type Name</label>
+                                    <input type="text" class="form-control" id="new_ink_type_name" name="new_ink_type_name" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Add Ink Type</button>
+                                </div>
+                                </form>
+                            </div>
+                            </div>
+                        </div>
+
+                        <!-- Paper Type Modal -->
+                        <div class="modal fade" id="paperTypeModal" tabindex="-1" role="dialog" aria-labelledby="paperTypeModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h5 class="modal-title" id="paperTypeModalLabel">Add New Paper Type</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                </div>
+                                <form action="{{ url_for('add_paper_type') }}" method="POST">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                    <label for="size">Paper Size</label>
+                                    <input type="text" class="form-control" id="size" name="size" required>
+                                    </div>
+                                    <div class="form-group">
+                                    <label for="description">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Add Paper Type</button>
+                                </div>
+                                </form>
+                            </div>
+                            </div>
+                        </div>
+                
+                
+
+                        <!-- Print Services Table -->
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Service Type</th>
+                                    <th>Price Per Page</th>
+                                    <th>Date/Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for service in print_services %}
+                                <tr>
+                                    <td>{{ service.id }}</td>
+                                    <td>{{ service.service_type }}</td>
+                                    <td>{{ service.price_per_page }}</td>
+                                    <td>{{ service.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Paper Inventory Table -->
+                        <h2 class="mt-5">Paper Inventory</h2>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Paper Type</th>
+                                    <th>Individual Sheets</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paper in paper_inventory %}
+                                <tr>
+                                    <td>{{ paper.type }}</td>
+                                    <td>{{ paper.individual_paper_count }} sheets</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Ink Inventory Table -->
+                        <h2 class="mt-5">Ink Inventory</h2>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Ink Type</th>
+                                    <th>Stock</th>
+                                    <th>Total Amount Spent</th>
+                                    <th>Purchase Location</th>
+                                    <th>Last Restock Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ink in ink_inventory %}
+                                <tr>
+                                    <td>{{ ink.name }}</td>
+                                    <td>{{ ink.stock }}</td>
+                                    <td>₱{{ ink.amount_spent }}</td>
+                                    <td>{{ ink.purchase_location }}</td>
+                                    <td>{{ ink.last_restock_date }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
         </div>
     </div>
 
-    <!-- JavaScript to toggle tabs -->
-    <script>
-        $(document).ready(function () {
-            $('#manage-products-tab').on('click', function () {
-                $(this).addClass('active').siblings().removeClass('active');
-                $('#manage-products').addClass('show active').siblings().removeClass('show active');
-            });
-            $('#manage-loading-tab').on('click', function () {
-                $(this).addClass('active').siblings().removeClass('active');
-                $('#manage-loading').addClass('show active').siblings().removeClass('show active');
-            });
-        });
-    </script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <!-- Popper.js, for Bootstrap 4 tooltips and popovers -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 </body>
 </html>

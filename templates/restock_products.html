@@ -51,7 +51,7 @@
                     <td>{{ product.original_price }}</td>
                     <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
                     <td>
-                        {% if current_user.role == 'admin' or current_user.role == 'supplybuyer' %}
+                        {% if current_user.role == 'admin' or current_user.role == 'purchaser' %}
                         <a href="{{ url_for('restock_product', product_id=product.id) }}" class="btn btn-primary btn-sm">Restock</a>
                         {% endif %}
                     </td>

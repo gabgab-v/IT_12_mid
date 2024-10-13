@@ -391,7 +391,7 @@ def dashboard():
         return redirect(url_for('another_dashboard'))
     elif current_user.role == 'inventory':
         return redirect(url_for('another_dashboard'))
-    elif current_user.role == 'supplybuyer':
+    elif current_user.role == 'purchaser':
         return redirect(url_for('another_dashboard'))
     elif current_user.role == 'helper':
         return redirect(url_for('another_dashboard'))
@@ -516,6 +516,54 @@ def search_products():
 
     return jsonify(products_data)
 
+@app.route('/manage_services')
+@login_required
+def manage_services():
+    # Manage Products
+    products = Product.query.filter_by(is_voided=False, deleted=False).all()
+
+    # Manage Loading Services
+    loading_transactions = LoadingTransaction.query.all()
+    load_balance = LoadBalance.query.first()
+
+    if load_balance is None:
+        # Initialize load balances to 0 if no LoadBalance record exists
+        smart_balance = 0.0
+        globe_balance = 0.0
+        gcash_balance = 0.0
+    else:
+        smart_balance = load_balance.smart_balance
+        globe_balance = load_balance.globe_balance
+        gcash_balance = load_balance.gcash_balance
+
+    restocks = Restock.query.filter(Restock.inventory_type.in_(['globe', 'smart', 'gcash'])).all()
+
+    # Manage Printing Services
+    print_services = PrintService.query.all()
+    paper_types = PaperType.query.all()
+    paper_inventory = PaperInventory.query.all()
+    ink_inventory = InkInventory.query.all()
+
+    paper_data = []
+    for paper_type in paper_types:
+        inventory = PaperInventory.query.filter_by(paper_type_id=paper_type.id).first()
+        paper_data.append({
+            'type': f"{paper_type.size} - {paper_type.description}",
+            'individual_paper_count': inventory.individual_paper_count if inventory else 0
+        })
+
+    # Render the combined template
+    return render_template('manage_services.html', 
+                           products=products,
+                           loading_transactions=loading_transactions,
+                           smart_balance=smart_balance,
+                           globe_balance=globe_balance,
+                           gcash_balance=gcash_balance,
+                           restocks=restocks,
+                           print_services=print_services, 
+                           paper_inventory=paper_data,
+                           ink_inventory=ink_inventory,
+                           paper_types=paper_types)
 
 
 # Route to display the restock form and log restocks
@@ -706,10 +754,29 @@ def sales_report():
     # Parse filter_date if provided
     if filter_date:
         selected_date = datetime.strptime(filter_date, '%Y-%m-%d')
+        date_filter = selected_date.date()
     else:
         selected_date = datetime.today()
+        date_filter = selected_date.date()
 
-    # Apply the correct query based on filter_type
+    # Fetch detailed transactions for the selected date
+    product_transactions = Transaction.query.filter(
+        Transaction.is_loading == False,
+        Transaction.print_service_id == None,
+        func.date(Transaction.timestamp) == date_filter
+    ).all()
+
+    loading_transactions = Transaction.query.filter(
+        Transaction.is_loading == True,
+        func.date(Transaction.timestamp) == date_filter
+    ).all()
+
+    print_transactions = Transaction.query.filter(
+        Transaction.print_service_id.isnot(None),
+        func.date(Transaction.timestamp) == date_filter
+    ).all()
+
+    # Apply the correct query based on filter_type to calculate total revenue
     if filter_type == 'daily':
         total_revenue = get_daily_sales_with_revenue(selected_date)
     elif filter_type == 'monthly':
@@ -721,9 +788,15 @@ def sales_report():
     else:
         total_revenue = 0
 
-    return render_template('sales_report.html', 
-                           filter_type=filter_type, 
-                           total_revenue=total_revenue)
+    return render_template(
+        'sales_report.html', 
+        filter_type=filter_type, 
+        total_revenue=total_revenue,
+        product_transactions=product_transactions,
+        loading_transactions=loading_transactions,
+        print_transactions=print_transactions
+    )
+
 
 # Add Items
 @app.route('/add_product', methods=['GET', 'POST'])

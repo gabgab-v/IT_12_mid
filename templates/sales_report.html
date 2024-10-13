@@ -1,44 +1,113 @@
+<!-- Sales Report Template -->
 {% extends "base.html" %}
 
-{% block title %}Manage Products{% endblock %}
+{% block title %}Sales Report{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1 class="text-center" style="font-size: 3rem;">Sales Report</h1>
-        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
-        <!-- Filter Form -->
-        <form method="GET" action="{{ url_for('sales_report') }}" class="mb-4">
-            <div class="form-row align-items-center">
-                <div class="col-md-4 mb-3">
-                    <label for="filter_type">Filter by:</label>
-                    <select name="filter_type" id="filter_type" class="form-control">
-                        <option value="daily">Daily</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="quarterly">Quarterly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="filter_date">Choose Date:</label>
-                    <input type="date" name="filter_date" id="filter_date" class="form-control" />
-                </div>
-                <div class="col-md-4 mb-3 align-self-end">
-                    <button type="submit" class="btn btn-primary btn-block">Apply Filter</button>
-                </div>
-            </div>
-        </form>
+<div class="container mt-5">
+    <h1 class="text-center display-4">Sales Report</h1>
 
-        <!-- Display Results -->
-        <div id="results" class="card">
-            <div class="card-body">
-                <h2 class="card-title">{{ filter_type.capitalize() }} Sales Profit</h2>
-                <p class="card-text">Total Revenue: <strong>{{ total_revenue }} PHP</strong></p>
-            </div>
+    <!-- Date Filter Form -->
+    <form method="GET" action="{{ url_for('sales_report') }}" class="mb-4">
+        <div class="form-group">
+            <label for="filter_date">Filter by Date:</label>
+            <input type="date" id="filter_date" name="filter_date" class="form-control" value="{{ request.args.get('filter_date', '') }}">
         </div>
+        <div class="form-group">
+            <label for="filter_type">Filter Type:</label>
+            <select id="filter_type" name="filter_type" class="form-control">
+                <option value="daily" {% if filter_type == 'daily' %}selected{% endif %}>Daily</option>
+                <option value="monthly" {% if filter_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                <option value="quarterly" {% if filter_type == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                <option value="yearly" {% if filter_type == 'yearly' %}selected{% endif %}>Yearly</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <h3>Total Profit: {{ total_revenue }}</h3>
+
+    <!-- Product Transactions Table -->
+    <h3 class="mt-5">Product Transactions</h3>
+    <div class="scrollable-table">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>User</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in product_transactions %}
+                <tr>
+                    <td>{{ transaction.product.name if transaction.product else "No Product" }}</td>
+                    <td>{{ transaction.quantity }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.user.role }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    {% endblock %}
+    <!-- Loading Transactions Table -->
+    <h3 class="mt-5">Loading Transactions</h3>
+    <div class="scrollable-table">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Service Provider</th>
+                    <th>Amount Loaded</th>
+                    <th>Total Price</th>
+                    <th>User</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in loading_transactions %}
+                <tr>
+                    <td>{{ transaction.service_provider }}</td>
+                    <td>{{ transaction.amount_loaded }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.user.role }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Print Transactions Table -->
+    <h3 class="mt-5">Print Transactions</h3>
+    <div class="scrollable-table">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Service Type</th>
+                    <th>Pages</th>
+                    <th>Back-to-Back</th>
+                    <th>Total Price</th>
+                    <th>User</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in print_transactions %}
+                <tr>
+                    <td>{{ transaction.print_service.service_type }}</td>
+                    <td>{{ transaction.pages }}</td>
+                    <td>{{ transaction.back_to_back }}</td>
+                    <td>{{ transaction.total_price }}</td>
+                    <td>{{ transaction.user.role }}</td>
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
