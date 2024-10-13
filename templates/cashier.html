@@ -88,19 +88,35 @@
 
     <div class="row">
         <!-- Total Panel -->
+        <!-- Total Panel -->
         <div class="row">
             <div class="col-md-12 total-panel">
                 <h3>Total</h3>
                 <p>Units: <span id="unitsCount">0</span></p>
                 <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
                 
+                <!-- Amount Paid Input -->
+                <div class="form-group mb-3">
+                    <label for="amountPaid">Amount Paid</label>
+                    <input type="number" class="form-control" id="amountPaid" placeholder="Enter amount paid" oninput="calculateChange()">
+                </div>
+
+                <!-- Change Display -->
+                <div class="form-group mb-3">
+                    <label for="changeAmount">Change</label>
+                    <input type="text" class="form-control" id="changeAmount" readonly>
+                </div>
+                
                 <div class="action-buttons">
                     <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
                         <button type="submit" class="btn btn-success w-100">Checkout</button>
                     </form>
+
+                    <button class="btn btn-primary w-100 mt-2" onclick="printReceipt()">Print Receipt</button>
                 </div>
             </div>
         </div>
+
 
         <!-- Transaction Panel -->
         <div class="col-md-7 transaction-panel mb-3">
@@ -570,6 +586,88 @@ function removeLoadRow(rowIndex, totalPrice) {
     document.getElementById('totalAmount').textContent = `P ${totalAmount.toFixed(2)}`;
     document.getElementById('unitsCount').textContent = unitsCount;
 }
+
+function printReceipt() {
+    // Get the necessary data from the page
+    const totalAmount = document.getElementById('totalAmount').textContent;
+    const unitsCount = document.getElementById('unitsCount').textContent;
+    const amountPaid = document.getElementById('amountPaid').value;
+    const changeAmount = document.getElementById('changeAmount').value;
+    
+    // Get the product list table content without the "Action" column
+    const productRows = document.querySelectorAll('#productTableBody tr');
+    let productTableContent = '';
+
+    // Loop through the rows to build the table rows without the Action column
+    productRows.forEach(row => {
+        const productName = row.cells[0].textContent;
+        const price = row.cells[1].textContent;
+        const quantity = row.cells[2].textContent;
+        const total = row.cells[3].textContent;
+        
+        productTableContent += `
+            <tr>
+                <td>${productName}</td>
+                <td>${price}</td>
+                <td>${quantity}</td>
+                <td>${total}</td>
+            </tr>
+        `;
+    });
+
+    // Create the receipt content
+    let receiptContent = `
+        <h2>Receipt</h2>
+        <p>Units: ${unitsCount}</p>
+        <p>Total Amount: ${totalAmount}</p>
+        <p>Amount Paid: P ${amountPaid}</p>
+        <p>Change: P ${changeAmount}</p>
+        <h3>Products:</h3>
+        <table border="1" cellpadding="10">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${productTableContent}
+            </tbody>
+        </table>
+    `;
+    
+    // Open a new window and print the content
+    const printWindow = window.open('', '', 'width=600,height=400');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Receipt</title>
+            </head>
+            <body>
+                ${receiptContent}
+            </body>
+        </html>
+    `);
+    
+    // Trigger the print
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
+
+
+function calculateChange() {
+    const totalAmount = parseFloat(document.getElementById('totalAmount').textContent.replace('P', '').trim()) || 0;
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const change = amountPaid - totalAmount;
+
+    document.getElementById('changeAmount').value = change.toFixed(2);
+}
+
+
 
 </script>
 
