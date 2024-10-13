@@ -52,7 +52,6 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)  # Selling price
     original_price = db.Column(db.Float, nullable=False)  # Original cost price
     stock = db.Column(db.Integer, nullable=False)
-    purchase_location = db.Column(db.String(100), nullable=True)  # e.g., 'Supermarket A', 'Market B'
     brand = db.Column(db.String(100), nullable=True)  # New field for brand
     is_voided = db.Column(db.Boolean, default=False)  # For voiding items
     deleted = db.Column(db.Boolean, default=False)  # For archiving
@@ -60,7 +59,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
 
     def __repr__(self):
-        return f"Product('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.purchase_location}', '{self.brand}', '{self.is_voided}', '{self.deleted}', '{self.expiration_date}')"
+        return f"Product('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.brand}', '{self.is_voided}', '{self.deleted}', '{self.expiration_date}')"
     
     
 # Transaction model remains the same
@@ -91,9 +90,8 @@ class Transaction(db.Model):
 
     # Foreign keys to the new models
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('transaction_type.id'), nullable=True)
-    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True)
 
-    def __init__(self, user_id, total_price, is_loading=False, product_id=None, quantity=None, print_service_id=None, pages=None, back_to_back=False, service_provider=None, amount_loaded=None, transaction_type_id=None, location_id=None):
+    def __init__(self, user_id, total_price, is_loading=False, product_id=None, quantity=None, print_service_id=None, pages=None, back_to_back=False, service_provider=None, amount_loaded=None, transaction_type_id=None):
         self.user_id = user_id
         self.total_price = total_price
         self.is_loading = is_loading
@@ -105,7 +103,7 @@ class Transaction(db.Model):
         self.service_provider = service_provider
         self.amount_loaded = amount_loaded
         self.transaction_type_id = transaction_type_id
-        self.location_id = location_id
+
 
 
 class ArchivedProduct(db.Model):
@@ -114,11 +112,10 @@ class ArchivedProduct(db.Model):
     price = db.Column(db.Float, nullable=False)
     original_price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
-    purchase_location = db.Column(db.String(100), nullable=True)
     deleted = db.Column(db.Boolean, default=True)  # Indicates if this product was archived
     
     def __repr__(self):
-        return f"ArchivedProduct('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.purchase_location}', '{self.deleted}')"
+        return f"ArchivedProduct('{self.name}', '{self.price}', '{self.original_price}', '{self.stock}', '{self.deleted}')"
 
 # Table for transaction types (e.g., 'normal', 'gcash')
 class TransactionType(db.Model):
@@ -128,13 +125,6 @@ class TransactionType(db.Model):
     def __repr__(self):
         return f"TransactionType('{self.name}')"
 
-# Table for locations (e.g., where the loading took place)
-class Location(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)  # e.g., 'Shop A', 'Mall B'
-
-    def __repr__(self):
-        return f"Location('{self.name}')"
 
 class LoadingTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -145,10 +135,6 @@ class LoadingTransaction(db.Model):
     # Foreign key to transaction type
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('transaction_type.id'), nullable=False)
     transaction_type = db.relationship('TransactionType', backref='loading_transactions', lazy=True)
-
-    # Foreign key to location (nullable)
-    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=True)
-    location = db.relationship('Location', backref='loading_transactions', lazy=True)
 
     # Foreign key to restock event (nullable)
     restock_id = db.Column(db.Integer, db.ForeignKey('restock.id'), nullable=True)
@@ -185,11 +171,10 @@ class InkInventory(db.Model):
     name = db.Column(db.String(100), nullable=False)  # e.g., 'Black Ink', 'Colored Ink'
     stock = db.Column(db.Integer, nullable=False)  # Number of ink cartridges/bottles
     amount_spent = db.Column(db.Float, nullable=False)  # Total cost for the ink purchase
-    purchase_location = db.Column(db.String(100), nullable=False)  # Where the ink was bought
     last_restock_date = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
     def __repr__(self):
-        return f"InkInventory('{self.name}', '{self.stock}', '{self.amount_spent}', '{self.purchase_location}', '{self.last_restock_date}')"
+        return f"InkInventory('{self.name}', '{self.stock}', '{self.amount_spent}', '{self.last_restock_date}')"
 
 
 class PaperInventory(db.Model):
@@ -202,12 +187,9 @@ class PaperInventory(db.Model):
     paper_type_id = db.Column(db.Integer, db.ForeignKey('paper_type.id'), nullable=False)
     paper_type = db.relationship('PaperType', backref='inventory_items', lazy=True)
     
-    # Foreign key to location where paper was purchased
-    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
-    location = db.relationship('Location', backref='paper_inventory', lazy=True)
 
     def __repr__(self):
-        return f"PaperInventory('{self.paper_type.size}', '{self.individual_paper_count}', '{self.amount_spent}', '{self.location.name}', '{self.last_restock_date}')"
+        return f"PaperInventory('{self.paper_type.size}', '{self.individual_paper_count}', '{self.amount_spent}', '{self.last_restock_date}')"
 
 class PrintTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -230,7 +212,6 @@ class Restock(db.Model):
     restock_amount = db.Column(db.Float, nullable=False)  # Amount of items restocked
     restock_date = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
     amount_spent = db.Column(db.Float, nullable=False)  # Total cost of the restock
-    restock_location = db.Column(db.String(100), nullable=False)  # Where the items were restocked
 
     # Foreign keys for both ink, paper, and product inventories, only one will be filled based on restock type
     ink_inventory_id = db.Column(db.Integer, db.ForeignKey('ink_inventory.id'), nullable=True)
@@ -246,7 +227,7 @@ class Restock(db.Model):
     product = db.relationship('Product', backref=db.backref('restocks', lazy=True))
 
     def __repr__(self):
-        return f"Restock('{self.restock_amount}', '{self.restock_date}', '{self.amount_spent}', '{self.restock_location}', '{self.inventory_type}')"
+        return f"Restock('{self.restock_amount}', '{self.restock_date}', '{self.amount_spent}', '{self.inventory_type}')"
 
 
 class PaperType(db.Model):
@@ -509,7 +490,6 @@ def search_products():
             'stock': product.stock,
             'price': product.price,
             'original_price': product.original_price,
-            'purchase_location': product.purchase_location,
             'expiration_date': product.expiration_date.strftime('%Y-%m-%d') if product.expiration_date else 'N/A'
         } for product in products
     ]
@@ -575,17 +555,16 @@ def restock_product(product_id):
         # Get form data
         restock_amount = int(request.form['restock_amount'])
         amount_spent = float(request.form['amount_spent'])
-        restock_location = request.form['restock_location']
+
 
         # Update product stock
         product.stock += restock_amount
-        product.purchase_location = restock_location
+
 
         # Log the restock event
         restock = Restock(
             restock_amount=restock_amount,
             amount_spent=amount_spent,
-            restock_location=restock_location,
             product_id=product.id,
             inventory_type='product'
         )
@@ -810,7 +789,6 @@ def add_product():
         price = float(request.form['price'])
         original_price = float(request.form['original_price'])
         stock = int(request.form['stock'])
-        purchase_location = request.form['purchase_location']
         expiration_date_str = request.form.get('expiration_date', None)
         category_id = request.form.get('category_id')  # Get the selected category
 
@@ -835,7 +813,6 @@ def add_product():
             price=price,
             original_price=original_price,
             stock=stock,
-            purchase_location=purchase_location,
             expiration_date=expiration_date,
             category_id=category_id  # Associate product with the selected category
         )
@@ -912,7 +889,6 @@ def delete_product(product_id):
         price=product.price,
         original_price=product.original_price,
         stock=product.stock,
-        purchase_location=product.purchase_location,
         deleted=True  # Set as deleted in the archive
     )
     db.session.add(archived_product)
@@ -943,7 +919,6 @@ def restore_product(product_id):
     product.price = archived_product.price
     product.original_price = archived_product.original_price
     product.stock = archived_product.stock
-    product.purchase_location = archived_product.purchase_location
 
     # Remove the archived entry
     db.session.delete(archived_product)
@@ -1584,7 +1559,6 @@ def add_loading_transaction():
             amount_loaded=amount_loaded,
             service_provider=service_provider,
             transaction_type=transaction_type,
-            location_id=None,  # Set to None
             restock_id=None  # Set to None
         )
         
@@ -1907,7 +1881,7 @@ def add_ink_type():
         
         if new_ink_type_name:
             # Add the new ink type to the database
-            new_ink_type = InkInventory(name=new_ink_type_name, stock=0, amount_spent=0, purchase_location='', last_restock_date=None)
+            new_ink_type = InkInventory(name=new_ink_type_name, stock=0, amount_spent=0, last_restock_date=None)
             db.session.add(new_ink_type)
             db.session.commit()
             flash('New Ink Type added successfully!', 'success')
@@ -1969,34 +1943,6 @@ def add_print_service():
     
     return render_template('add_print_service.html')
 
-@app.route('/add_location', methods=['GET', 'POST'])
-@login_required
-def add_location():
-    if request.method == 'POST':
-        location_name = request.form['location_name']
-        
-        # Check if the location already exists
-        existing_location = Location.query.filter_by(name=location_name).first()
-        if existing_location:
-            flash('Location already exists', 'danger')
-            return redirect(url_for('create_location'))
-        
-        # Add new location
-        new_location = Location(name=location_name)
-        try:
-            db.session.add(new_location)
-            db.session.commit()
-            flash(f'Location "{location_name}" added successfully!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error adding location: {e}', 'danger')
-        
-        return redirect(url_for('add_location'))
-    
-    # For GET request, render the create location form
-    locations = Location.query.all()
-    return render_template('create_location.html', locations=locations)
-
 @app.route('/add_transaction_type', methods=['GET', 'POST'])
 @login_required
 def add_transaction_type():
@@ -2032,9 +1978,8 @@ def manage_restock_events():
     paper_inventory = PaperInventory.query.all()
     paper_types = PaperType.query.all()
     products = Product.query.all()
-    locations = Location.query.all()
     return render_template('manage_restock_events.html', restock_events=restock_events,ink_inventory=ink_inventory, paper_inventory=paper_inventory, 
-                           paper_types=paper_types,products=products, locations=locations)
+                           paper_types=paper_types,products=products)
 
 
 @app.route('/add_loading_restock', methods=['GET', 'POST'])
@@ -2043,13 +1988,11 @@ def add_loading_restock():
         # Retrieve data from the form
         restock_amount = request.form['restock_amount']
         amount_spent = request.form['amount_spent']
-        restock_location = request.form['restock_location']
 
         # Create a new Restock instance specific to loading
         new_restock = Restock(
             restock_amount=restock_amount,
             amount_spent=amount_spent,
-            restock_location=restock_location,
             inventory_type='loading'  # Specific to loading restock
         )
 
@@ -2075,14 +2018,12 @@ def manage_loading_restock_events():
 def add_restock():
     # Extract form data
     restock_amount = float(request.form['restock_amount'])  # Amount of rims for paper or units for ink
-    restock_location = request.form['restock_location']  # Store or location from where it was restocked
     amount_spent = float(request.form['amount_spent'])  # Cost of the restock
     restock_type = request.form['restock_type']  # Type of item being restocked (ink, paper, load, gcash)
 
-    # Create a new Restock entry
+    # Create a new Restock entry without restock_location
     new_restock = Restock(
         restock_amount=restock_amount,
-        restock_location=restock_location,
         amount_spent=amount_spent,
         inventory_type=restock_type,  # Track whether it is ink, paper, load, etc.
         restock_date=current_ph_timestamp()
@@ -2091,47 +2032,40 @@ def add_restock():
 
     # Handle paper restock
     if restock_type == 'paper':
-        paper_type_id = request.form.get('paper_type_id')  # Paper type selected
+        paper_type_id = request.form.get('paper_type_id')
 
         if not paper_type_id:
             flash('Please select a paper type!', 'danger')
             return redirect(url_for('manage_restock_events'))
 
-        # Fetch the paper inventory by paper_type_id
         paper_inventory = PaperInventory.query.filter_by(paper_type_id=paper_type_id).first()
 
-        # Update or create a paper inventory entry
         if paper_inventory:
-            paper_inventory.individual_paper_count += restock_amount  # Track sheets only
+            paper_inventory.individual_paper_count += restock_amount
             paper_inventory.amount_spent += amount_spent
             paper_inventory.last_restock_date = current_ph_timestamp()
         else:
             paper_inventory = PaperInventory(
                 individual_paper_count=restock_amount,
                 amount_spent=amount_spent,
-                paper_type_id=paper_type_id,
-                location_id=restock_location
+                paper_type_id=paper_type_id
             )
             db.session.add(paper_inventory)
 
     # Handle ink restock
     elif restock_type == 'ink':
-        ink_type_id = request.form['ink_type_id']  # Selected ink type
+        ink_type_id = request.form['ink_type_id']
         ink_inventory = InkInventory.query.get(ink_type_id)
 
         if ink_inventory:
-            # Update the existing ink inventory
             ink_inventory.stock += restock_amount
             ink_inventory.amount_spent += amount_spent
-            ink_inventory.purchase_location = restock_location
             ink_inventory.last_restock_date = current_ph_timestamp()
         else:
-            # Create a new ink inventory entry
             ink_inventory = InkInventory(
                 name=request.form['ink_name'],
                 stock=restock_amount,
-                amount_spent=amount_spent,
-                purchase_location=restock_location
+                amount_spent=amount_spent
             )
             db.session.add(ink_inventory)
 
@@ -2144,7 +2078,6 @@ def add_restock():
             db.session.add(load_balance)
             db.session.commit()
 
-
         if restock_type == 'smart':
             load_balance.smart_balance += restock_amount
         elif restock_type == 'globe':
@@ -2152,8 +2085,7 @@ def add_restock():
         elif restock_type == 'gcash':
             load_balance.gcash_balance += restock_amount
 
-
-    # Commit changes to the database
+    # Commit changes
     db.session.commit()
 
     flash('Restock added successfully!', 'success')
