@@ -593,7 +593,7 @@ def void_product(product_id):
     db.session.commit()
 
     flash(f'Product "{product.name}" has been voided successfully.', 'success')
-    return redirect(url_for('manage_products'))
+    return redirect(url_for('manage_services'))
 
 @app.route('/reduce_stock/<int:product_id>', methods=['POST'])
 @login_required
@@ -613,7 +613,7 @@ def reduce_stock(product_id):
     else:
         flash('Invalid quantity specified.', 'danger')
     
-    return redirect(url_for('manage_products'))
+    return redirect(url_for('manage_services'))
 
 
 @app.route('/view_transactions')
@@ -822,7 +822,7 @@ def add_product():
             db.session.add(new_product)
             db.session.commit()
             flash('Product added successfully!', 'success')
-            return redirect(url_for('view_products'))  # Redirect to product list after adding
+            return redirect(url_for('manage_services'))  # Redirect to product list after adding
         except Exception as e:
             db.session.rollback()
             flash(f'Error adding product: {e}', 'danger')
@@ -862,7 +862,7 @@ def edit_product(product_id):
             # Commit the update to the database
             db.session.commit()
             flash('Product updated successfully!', 'success')
-            return redirect(url_for('view_products'))
+            return redirect(url_for('manage_services'))
         except ValueError:
             flash('Please enter a numeric value for the price.', 'danger')
             return redirect(url_for('edit_product', product_id=product_id))
@@ -897,7 +897,7 @@ def delete_product(product_id):
     db.session.commit()
 
     flash(f'Product "{product.name}" has been archived successfully.', 'success')
-    return redirect(url_for('manage_products'))
+    return redirect(url_for('manage_services'))
 
 
 
@@ -1888,7 +1888,7 @@ def add_ink_type():
         else:
             flash('Ink Type name is required!', 'danger')
             
-    return redirect(url_for('manage_printing_services'))  # Replace 'some_view' with the correct view for redirection
+    return redirect(url_for('manage_services'))  # Replace 'some_view' with the correct view for redirection
 
 # Route for adding new paper type
 @app.route('/add-paper-type', methods=['POST'])
@@ -1919,7 +1919,7 @@ def add_paper_type():
         else:
             flash('Paper size is required!', 'danger')
 
-    return redirect(url_for('manage_printing_services'))
+    return redirect(url_for('manage_services'))
 
 
 
@@ -1939,7 +1939,7 @@ def add_print_service():
         db.session.add(new_service)
         db.session.commit()
         flash('Print Service Added Successfully')
-        return redirect(url_for('manage_printing_services'))
+        return redirect(url_for('manage_services'))
     
     return render_template('add_print_service.html')
 

@@ -10,7 +10,7 @@
     <div class="container-fluid">
         <div class="row">
         <!-- Top Navigation Bar -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light w-100 fixed-top">
             <div class="container-fluid">
                 <a href="{{ url_for('another_dashboard') }}" class="navbar-brand">Back to Dashboard</a>
 
@@ -36,7 +36,7 @@
 
 
             <!-- Main Content -->
-            <main role="main" class="container-fluid px-4">
+            <main role="main" class="container-fluid px-4" style="padding-top: 70px;">
                 <h1 class="text-center mt-4">Manage All Services</h1>
 
                 <!-- Manage Products Section -->
@@ -150,7 +150,7 @@
 
                 <!-- Manage Loading Services Section -->
                 <section id="loading-services" class="mt-5">
-                    <h2>Manage Loading Services</h2>
+                    <h2 class="text-center">Manage Loading Services</h2>
                     <!-- Load Balance Display -->
                     <div class="alert alert-info">
                         <h4>Current Smart Balance: {{ smart_balance }}</h4>
@@ -189,7 +189,7 @@
                 <!-- Manage Printing Services Section -->
                 <section id="printing-services" class="mt-5">
                     <div class="container mt-5">
-                        <h2>Manage Printing Services</h2>
+                        <h2 class="text-center">Manage Printing Services</h2>
                         {% if current_user.role == 'admin' %}
                         <a href="{{ url_for('add_print_service') }}" class="btn btn-secondary mb-3">Add Print Service</a>
                         {% endif %}

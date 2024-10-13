@@ -223,4 +223,36 @@
         });
     });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificationBell = document.getElementById('notificationBell');
+        const badge = document.querySelector('.notification-bell .badge');
+
+        notificationBell.addEventListener('click', function() {
+            if (badge) {
+                badge.remove();  // Remove the badge element entirely
+            }
+        });
+    });
+</script>
+
+<script>
+    setInterval(function() {
+        // Send AJAX request to check for new low stock products
+        $.ajax({
+            url: '/check-low-stock',  // Flask route to check low stock
+            method: 'GET',
+            success: function(data) {
+                if (data.low_stock_count > 0) {
+                    // Show the notification badge with the new low stock count
+                    $('.notification-bell .badge').text(data.low_stock_count).show();
+                } else {
+                    // Hide the badge if no low stock
+                    $('.notification-bell .badge').hide();
+                }
+            }
+        });
+    }, 60000); // Check every 60 seconds
+</script>
+
 {% endblock scripts %}
