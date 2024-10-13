@@ -59,6 +59,31 @@
         {% endif %}
     </div>
 
+        <!-- Low Stock Products Table -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">Products with Low Stock</div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in low_stock_products %}
+                        <tr>
+                            <td>{{ product.id }}</td>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.stock }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
 
     {% if current_user.role == 'admin' %}
     <!-- Transaction Charts -->
@@ -90,30 +115,6 @@
     </div>
     {% endif %}
 
-    <!-- Low Stock Products Table -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-danger text-white">Products with Low Stock</div>
-        <div class="card-body">
-            <table class="table table-bordered table-hover">
-                <thead class="thead-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Stock</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in low_stock_products %}
-                    <tr>
-                        <td>{{ product.id }}</td>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.stock }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 {% endblock %}
 

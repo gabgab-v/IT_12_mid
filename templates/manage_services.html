@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Management Interface</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Unified Management Interface</h1>
+        
+        <!-- Dashboard Navigation Links -->
+        <nav class="mb-3">
+            <ul class="nav nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" id="manage-products-tab" href="#manage-products" data-toggle="tab">Manage Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="manage-loading-tab" href="#manage-loading" data-toggle="tab">Manage Loading Services</a>
+                </li>
+                <!-- Future tabs can go here, e.g., Manage Printing -->
+            </ul>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            
+            <!-- Manage Products Section -->
+            <div class="tab-pane fade show active" id="manage-products">
+                <h2>Manage Products</h2>
+                <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+                {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
+                <a href="{{ url_for('add_product') }}" class="btn btn-secondary mb-3">Add Items</a>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('manage_archived_products') }}" class="btn btn-secondary mb-3">View Archived Products</a>
+                <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary mb-3">Manage Categories</a>
+                {% endif %}
+
+                <!-- Search Form for Products -->
+                <form class="form-inline mb-3">
+                    <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
+                    <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
+                    <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">  <!-- Brand Filter -->
+                </form>
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Brand</th>
+                            <th>Stock</th>
+                            <th>Store Price</th>
+                            <th>Original Price</th>
+                            <th>Expiration Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products_table">
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category.name }}</td>
+                            <td>{{ product.brand }}</td>
+                            <td>{{ product.stock }}</td>
+                            <td>{{ product.price }}</td>
+                            <td>{{ product.original_price }}</td>
+                            <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
+                            <td>
+                                {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
+                                <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">Update</a>
+                                <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
+                                </form>
+                                {% endif %}
+                                {% if current_user.role == 'admin' %}
+                                <form action="{{ url_for('reduce_stock', product_id=product.id) }}" method="POST" style="display: inline;">
+                                    <input type="number" name="reduce_quantity" min="1" max="{{ product.stock }}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
+                                    <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
+                                </form>
+                                {% endif %}
+                                {% if current_user.role == 'admin' or current_user.role == 'supplybuyer' %}
+                                <a href="{{ url_for('restock_product', product_id=product.id) }}" class="btn btn-primary btn-sm">Restock</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Manage Loading Services Section -->
+            <div class="tab-pane fade" id="manage-loading">
+                <h2>Manage Loading Services</h2>
+                <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+                <!-- Load Balance Display -->
+                <div class="alert alert-info">
+                    <h4>Current Smart Balance: {{ smart_balance }}</h4>
+                    <h4>Current Globe Balance: {{ globe_balance }}</h4>
+                    <h4>Current GCash Balance: {{ gcash_balance }}</h4>
+                </div>
+
+                <!-- Table of Restocks -->
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Restock Amount</th>
+                            <th>Restock Location</th>
+                            <th>Amount Spent</th>
+                            <th>Restock Type</th>
+                            <th>Date/Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for restock in restocks %}
+                        <tr>
+                            <td>{{ restock.id }}</td>
+                            <td>{{ restock.restock_amount }}</td>
+                            <td>{{ restock.restock_location }}</td>
+                            <td>{{ restock.amount_spent }}</td>
+                            <td>{{ restock.inventory_type }}</td>
+                            <td>{{ restock.restock_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript to toggle tabs -->
+    <script>
+        $(document).ready(function () {
+            $('#manage-products-tab').on('click', function () {
+                $(this).addClass('active').siblings().removeClass('active');
+                $('#manage-products').addClass('show active').siblings().removeClass('show active');
+            });
+            $('#manage-loading-tab').on('click', function () {
+                $(this).addClass('active').siblings().removeClass('active');
+                $('#manage-loading').addClass('show active').siblings().removeClass('show active');
+            });
+        });
+    </script>
+
+</body>
+</html>

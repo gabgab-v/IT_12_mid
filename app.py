@@ -80,6 +80,7 @@ class Transaction(db.Model):
 
     # For both product and loading transactions
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('transactions', lazy=True))
     total_price = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=current_ph_timestamp)
 
@@ -590,17 +591,43 @@ def reduce_stock(product_id):
 
 @app.route('/view_transactions')
 @login_required
-@admin_required
 def view_transactions():
-    # Fetch all product transactions and loading transactions separately
-    product_transactions = Transaction.query.filter_by(is_loading=False, print_service_id=None).all()  # Non-loading product transactions
-    loading_transactions = Transaction.query.filter_by(is_loading=True).all()  # Loading transactions
-    print_transactions = Transaction.query.filter(Transaction.print_service_id.isnot(None)).all()  # Print service transactions
+    # Get the date filter from the query parameters
+    date_str = request.args.get('date')
+    
+    if date_str:
+        # Parse the date string to a datetime object
+        date_filter = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Apply the date filter to each transaction type
+        product_transactions = Transaction.query.filter(
+            Transaction.is_loading == False,
+            Transaction.print_service_id == None,
+            func.date(Transaction.timestamp) == date_filter
+        ).all()
+        
+        loading_transactions = Transaction.query.filter(
+            Transaction.is_loading == True,
+            func.date(Transaction.timestamp) == date_filter
+        ).all()
+        
+        print_transactions = Transaction.query.filter(
+            Transaction.print_service_id.isnot(None),
+            func.date(Transaction.timestamp) == date_filter
+        ).all()
+        
+    else:
+        # If no date is specified, fetch all transactions
+        product_transactions = Transaction.query.filter_by(is_loading=False, print_service_id=None).all()
+        loading_transactions = Transaction.query.filter_by(is_loading=True).all()
+        print_transactions = Transaction.query.filter(Transaction.print_service_id.isnot(None)).all()
 
-    return render_template('view_transactions.html', 
-                           product_transactions=product_transactions, 
-                           loading_transactions=loading_transactions,
-                           print_transactions=print_transactions)  # Pass print transactions
+    return render_template(
+        'view_transactions.html', 
+        product_transactions=product_transactions, 
+        loading_transactions=loading_transactions,
+        print_transactions=print_transactions
+    )
 
 # SALES REPORT
 
@@ -760,6 +787,11 @@ def add_product():
 def view_products():
     products = Product.query.all()
     return render_template('manage_products.html', products=products)
+
+@app.route('/restock_products', methods=['GET'])
+def restock_products():
+    products = Product.query.all()
+    return render_template('restock_products.html', products=products)
 
 
 # Update Product (Edit Product)

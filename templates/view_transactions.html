@@ -18,8 +18,17 @@
     </style>
 
     <div class="container mt-5">
-        <h1 class="text-center display-4">Manage Users</h1>
+        <h1 class="text-center display-4">View Transactions</h1>
         <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+        <!-- Date Filter Form -->
+        <form method="GET" action="{{ url_for('view_transactions') }}" class="mb-4">
+            <div class="form-group">
+                <label for="date">Filter by Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ request.args.get('date', '') }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
 
         <!-- Product Transactions Table -->
         <h3 class="text-center display-6">Product Transactions</h3>
@@ -27,20 +36,22 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        
                         <th>Product</th>
                         <th>Quantity</th>
                         <th>Total Price</th>
+                        <th>User</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for transaction in product_transactions %}
                     <tr>
-                        <td>{{ transaction.id }}</td>
+                    
                         <td>{% if transaction.product %}{{ transaction.product.name }}{% else %}No Product{% endif %}</td>
                         <td>{{ transaction.quantity }}</td>
                         <td>{{ transaction.total_price }}</td>
+                        <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>
                     {% endfor %}
@@ -54,20 +65,22 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        
                         <th>Service Provider</th>
                         <th>Amount Loaded</th>
                         <th>Total Price</th>
+                        <th>User</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for transaction in loading_transactions %}
                     <tr>
-                        <td>{{ transaction.id }}</td>
+                        
                         <td>{{ transaction.service_provider }}</td>
                         <td>{{ transaction.amount_loaded }}</td>
                         <td>{{ transaction.total_price }}</td>
+                        <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>
                     {% endfor %}
@@ -96,7 +109,7 @@
                         <td>{{ transaction.pages }}</td>
                         <td>{{ transaction.back_to_back }}</td>
                         <td>{{ transaction.total_price }}</td>
-                        <td>{{ transaction.user_id }}</td>
+                        <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>
                     {% endfor %}

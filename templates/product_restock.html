@@ -33,7 +33,6 @@
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Product Name</th>
                     <th>Category</th>
                     <th>Restock Amount</th>
@@ -45,7 +44,6 @@
             <tbody>
                 {% for restock in restock_log %}
                 <tr>
-                    <td>{{ restock.id }}</td>
                     <td>{{ restock.product.name }}</td>
                     <td>{{ restock.product.category.name }}</td>
                     <td>{{ restock.restock_amount }}</td>
