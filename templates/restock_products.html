@@ -9,7 +9,7 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Manage Restock Products</h1>
-        <a href="{{ url_for('manage_restock_events') }}" class="btn btn-secondary mb-3">Back to Restock</a>
+        <a href="{{ url_for('manage_services') }}" class="btn btn-secondary mb-3">Back to Manage Services</a>
 
         <!-- Search Form -->
         <form class="form-inline mb-3">
@@ -77,14 +77,6 @@
                                 <td>${product.original_price}</td>
                                 <td>${product.expiration_date || 'N/A'}</td>
                                 <td>
-                                    <a href="/edit_product/${product.id}" class="btn btn-warning btn-sm">Edit</a>
-                                    <form action="/delete_product/${product.id}" method="POST" style="display: inline;">
-                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
-                                    </form>
-                                    <form action="/reduce_stock/${product.id}" method="POST" style="display: inline;">
-                                        <input type="number" name="reduce_quantity" min="1" max="${product.stock}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
-                                        <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
-                                    </form>
                                     <a href="/restock_product/${product.id}" class="btn btn-primary btn-sm">Restock</a>
                                 </td>
                             </tr>

@@ -496,6 +496,41 @@ def search_products():
 
     return jsonify(products_data)
 
+#FOR RESTOCK SERACH DISABLE THE ACTION BUTTON LEAVE THE RESTOCK ONLY
+@app.route('/search_products2', methods=['GET'])
+@login_required
+@admin_required
+def search_products2():
+    search_name = request.args.get('search_name', '').strip()
+    search_category = request.args.get('search_category', '').strip()
+    search_brand = request.args.get('search_brand', '').strip()  # New brand filter
+
+    query = Product.query.filter_by(is_voided=False, deleted=False)
+
+    if search_name:
+        query = query.filter(Product.name.ilike(f"%{search_name}%"))
+    if search_category:
+        query = query.join(Category).filter(Category.name.ilike(f"%{search_category}%"))
+    if search_brand:
+        query = query.filter(Product.brand.ilike(f"%{search_brand}%"))  # Apply brand filter
+
+    products = query.all()
+
+    products_data = [
+        {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category.name,
+            'brand': product.brand,  # Include brand
+            'stock': product.stock,
+            'price': product.price,
+            'original_price': product.original_price,
+            'expiration_date': product.expiration_date.strftime('%Y-%m-%d') if product.expiration_date else 'N/A'
+        } for product in products
+    ]
+
+    return jsonify(products_data)
+
 @app.route('/manage_services')
 @login_required
 def manage_services():

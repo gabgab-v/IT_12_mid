@@ -88,19 +88,18 @@
 
     <div class="row">
         <!-- Total Panel -->
-        <!-- Total Panel -->
         <div class="row">
             <div class="col-md-12 total-panel">
                 <h3>Total</h3>
                 <p>Units: <span id="unitsCount">0</span></p>
-                <p>Sales Total: <span class="total-amount" id="totalAmount">P 0.00</span></p>
+                <p>Sales Total: <span class="total-amount" id="totalAmount">₱ 0.00</span></p>
                 
                 <!-- Amount Paid Input -->
                 <div class="form-group mb-3">
                     <label for="amountPaid">Amount Paid</label>
                     <input type="number" class="form-control" id="amountPaid" placeholder="Enter amount paid" oninput="calculateChange()">
                 </div>
-
+        
                 <!-- Change Display -->
                 <div class="form-group mb-3">
                     <label for="changeAmount">Change</label>
@@ -108,10 +107,11 @@
                 </div>
                 
                 <div class="action-buttons">
-                    <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}">
+                    <!-- Checkout Form -->
+                    <form id="checkoutForm" method="POST" action="{{ url_for('unified_checkout') }}" onsubmit="return handleCheckout(event)">
                         <button type="submit" class="btn btn-success w-100">Checkout</button>
                     </form>
-
+        
                     <button class="btn btn-primary w-100 mt-2" onclick="printReceipt()">Print Receipt</button>
                 </div>
             </div>
@@ -228,6 +228,16 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Structure -->
+    <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:5px; text-align:center;">
+            <p>Would you like a receipt?</p>
+            <button onclick="handleReceiptChoice(true)">Yes</button>
+            <button onclick="handleReceiptChoice(false)">No</button>
+        </div>
+    </div>
+
 
 </div>
 
@@ -587,6 +597,34 @@ function removeLoadRow(rowIndex, totalPrice) {
     document.getElementById('unitsCount').textContent = unitsCount;
 }
 
+function handleCheckout(event) {
+    const productTableBody = document.getElementById('productTableBody');
+    console.log("Checking if cart is empty.");
+
+    if (productTableBody.children.length === 0) {
+        alert("Your cart is empty. Please add items before checking out.");
+        event.preventDefault();
+        return false;
+    }
+
+    event.preventDefault();
+    console.log("Cart has items. Asking for receipt.");
+    
+    const wantsReceipt = confirm("Would you like a receipt?");
+    console.log("User wants receipt:", wantsReceipt);
+
+    if (wantsReceipt) {
+        printReceipt();
+
+        setTimeout(() => {
+            document.getElementById('checkoutForm').submit();
+        }, 3000);
+    } else {
+        document.getElementById('checkoutForm').submit();
+    }
+}
+
+
 function printReceipt() {
     // Get the necessary data from the page
     const totalAmount = document.getElementById('totalAmount').textContent;
@@ -621,7 +659,7 @@ function printReceipt() {
         <p>Units: ${unitsCount}</p>
         <p>Total Amount: ${totalAmount}</p>
         <p>Amount Paid: P ${amountPaid}</p>
-        <p>Change: P ${changeAmount}</p>
+        <p>Change:  ${changeAmount}</p>
         <h3>Products:</h3>
         <table border="1" cellpadding="10">
             <thead>
@@ -664,7 +702,7 @@ function calculateChange() {
     const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
     const change = amountPaid - totalAmount;
 
-    document.getElementById('changeAmount').value = change.toFixed(2);
+    document.getElementById('changeAmount').value = 'P ' + change.toFixed(2);
 }
 
 
