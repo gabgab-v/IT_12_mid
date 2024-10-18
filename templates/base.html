@@ -88,10 +88,10 @@
             </span>            
         </div>
         <nav id="sidebar-links" class="flex flex-col mt-4 space-y-4">
-            {% if current_user.role == 'admin' or current_user.role == 'inventory'  or current_user.role == 'purchaser' %}
-            <a href="{{ url_for('manage_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
-                <i class="fas fa-box"></i>
-                <span class="sidebar-text ml-3">Manage Services</span>
+            {% if current_user.role == 'admin' or current_user.role == 'helper' or current_user.role == 'cashier'%}
+            <a href="{{ url_for('cashier') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-users"></i>
+                <span class="sidebar-text ml-3">Cashier</span>
             </a>
             {% endif %}
             {% if current_user.role == 'admin' or current_user.role == 'purchaser' or current_user.role == 'inventory' or current_user.role == 'helper' %}
@@ -104,10 +104,10 @@
                 {% endif %}
             </a>
             {% endif %}
-            {% if current_user.role == 'admin' or current_user.role == 'helper' or current_user.role == 'cashier'%}
-            <a href="{{ url_for('cashier') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
-                <i class="fas fa-users"></i>
-                <span class="sidebar-text ml-3">Cashier</span>
+            {% if current_user.role == 'admin' or current_user.role == 'inventory'  or current_user.role == 'purchaser' %}
+            <a href="{{ url_for('manage_services') }}" class="px-4 py-3 flex items-center hover:bg-gray-700">
+                <i class="fas fa-box"></i>
+                <span class="sidebar-text ml-3">Manage Services</span>
             </a>
             {% endif %}
             {% if current_user.role == 'admin' %}

@@ -631,7 +631,12 @@ function printReceipt() {
     const unitsCount = document.getElementById('unitsCount').textContent;
     const amountPaid = document.getElementById('amountPaid').value;
     const changeAmount = document.getElementById('changeAmount').value;
+    const date = new Date();
     
+    // Format the date and time for the receipt
+    const formattedDate = date.toLocaleDateString();
+    const formattedTime = date.toLocaleTimeString();
+
     // Get the product list table content without the "Action" column
     const productRows = document.querySelectorAll('#productTableBody tr');
     let productTableContent = '';
@@ -653,31 +658,38 @@ function printReceipt() {
         `;
     });
 
-    // Create the receipt content
+    // Create the receipt content with improved styling
     let receiptContent = `
-        <h2>Receipt</h2>
-        <p>Units: ${unitsCount}</p>
-        <p>Total Amount: ${totalAmount}</p>
-        <p>Amount Paid: P ${amountPaid}</p>
-        <p>Change:  ${changeAmount}</p>
-        <h3>Products:</h3>
-        <table border="1" cellpadding="10">
-            <thead>
-                <tr>
-                    <th>Product Name</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${productTableContent}
-            </tbody>
-        </table>
+        <div style="font-family: Arial, sans-serif; width: 300px; margin: 0 auto; text-align: center;">
+            <h2>Rival Store</h2>
+            <p><strong>Receipt</strong></p>
+            <p>${formattedDate} ${formattedTime}</p>
+            <hr>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead>
+                    <tr>
+                        <th style="border-bottom: 1px solid #000;">Product</th>
+                        <th style="border-bottom: 1px solid #000;">Price</th>
+                        <th style="border-bottom: 1px solid #000;">Qty</th>
+                        <th style="border-bottom: 1px solid #000;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${productTableContent}
+                </tbody>
+            </table>
+            <hr>
+            <p style="text-align: right;">Units: ${unitsCount}</p>
+            <p style="text-align: right;">Total Amount: <strong> ${totalAmount}</strong></p>
+            <p style="text-align: right;">Amount Paid: P ${amountPaid}</p>
+            <p style="text-align: right;">Change: ${changeAmount}</p>
+            <hr>
+            <p>Thank you for buying in us!</p>
+        </div>
     `;
-    
+
     // Open a new window and print the content
-    const printWindow = window.open('', '', 'width=600,height=400');
+    const printWindow = window.open('', '', 'width=300,height=600');
     printWindow.document.write(`
         <html>
             <head>

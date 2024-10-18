@@ -29,6 +29,17 @@
         right: 0;
         transform: translate(50%, -50%);
     }
+
+    .out-of-stock {
+        color: red;
+        font-weight: bold;
+    }
+
+    .low-stock {
+        color: orange;
+        font-weight: bold;
+    }
+
 </style>
 
 <div class="text-center mb-4">
@@ -90,7 +101,10 @@
                     <tr>
                         <td>{{ product.id }}</td>
                         <td>{{ product.name }}</td>
-                        <td>{{ product.stock }}</td>
+                        <td class="{% if product.stock == 0 %}out-of-stock{% elif product.stock <= 5 %}low-stock{% endif %}">
+                            {{ 'Out of Stock' if product.stock == 0 else product.stock }}
+                        </td>
+                        
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -121,7 +135,10 @@
             <!-- List low stock products in the dropdown -->
             {% for product in low_stock_products %}
             <a class="dropdown-item" href="#">
-                {{ product.name }} (Stock: {{ product.stock }})
+                {{ product.name }} 
+                (<span class="{% if product.stock == 0 %}out-of-stock{% elif product.stock <= 5 %}low-stock{% endif %}">
+                    {{ 'Out of Stock' if product.stock == 0 else product.stock }}
+                </span>)
             </a>
             {% endfor %}
             {% else %}
@@ -129,6 +146,7 @@
             <span class="dropdown-item">No low stock products</span>
             {% endif %}
         </div>
+
     </div>
 </div>
 

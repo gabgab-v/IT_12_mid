@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Services</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .out-of-stock {
+            color: red;
+            font-weight: bold;
+        }
+
+        .low-stock {
+            color: orange;
+            font-weight: bold;
+        }
+
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -57,8 +69,15 @@
                         <form class="form-inline mb-3">
                             <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
                             <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
-                            <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">  <!-- New Brand Search Field -->
+                            <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">
+                            <div class="form-check ml-2">
+                                <input class="form-check-input" type="checkbox" id="out_of_stock_filter">
+                                <label class="form-check-label" for="out_of_stock_filter">
+                                    Out of Stock Only
+                                </label>
+                            </div>
                         </form>
+                        
 
                         <table class="table table-bordered">
                             <thead>
@@ -79,7 +98,10 @@
                                     <td>{{ product.name }}</td>
                                     <td>{{ product.category.name }}</td>
                                     <td>{{ product.brand }}</td> <!-- Added Brand here -->
-                                    <td>{{ product.stock }}</td>
+                                    <td class="{% if product.stock == 0 %}out-of-stock{% elif product.stock <= 5 %}low-stock{% endif %}">
+                                        {{ 'Out of Stock' if product.stock == 0 else product.stock }}
+                                    </td>
+                                    
                                     <td>{{ product.price }}</td>
                                     <td>{{ product.original_price }}</td>
                                     <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
@@ -108,20 +130,24 @@
                             const searchName = document.getElementById('search_name').value;
                             const searchCategory = document.getElementById('search_category').value;
                             const searchBrand = document.getElementById('search_brand').value;
+                            const outOfStockOnly = document.getElementById('out_of_stock_filter') ? document.getElementById('out_of_stock_filter').checked : false;
 
-                            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}&search_brand=${searchBrand}`)
+                            // Fetch products with the additional outOfStock filter
+                            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}&search_brand=${searchBrand}&out_of_stock=${outOfStockOnly}`)
                                 .then(response => response.json())
                                 .then(data => {
                                     const tableBody = document.getElementById('products_table');
                                     tableBody.innerHTML = '';  // Clear current rows
 
                                     data.forEach(product => {
+                                        // Display 'Out of Stock' if stock is 0
+                                        const stockDisplay = product.stock === 0 ? 'Out of Stock' : product.stock;
                                         const row = `
                                             <tr>
                                                 <td>${product.name}</td>
                                                 <td>${product.category}</td>
                                                 <td>${product.brand}</td>
-                                                <td>${product.stock}</td>
+                                                <td>${stockDisplay}</td>
                                                 <td>${product.price}</td>
                                                 <td>${product.original_price}</td>
                                                 <td>${product.expiration_date || 'N/A'}</td>
@@ -142,9 +168,16 @@
                                 });
                         }
 
+                        // Add event listeners to call fetchFilteredProducts on input and checkbox change
                         document.getElementById('search_name').addEventListener('input', fetchFilteredProducts);
                         document.getElementById('search_category').addEventListener('input', fetchFilteredProducts);
                         document.getElementById('search_brand').addEventListener('input', fetchFilteredProducts);
+
+                        // Check if the Out of Stock filter exists before adding an event listener
+                        if (document.getElementById('out_of_stock_filter')) {
+                            document.getElementById('out_of_stock_filter').addEventListener('change', fetchFilteredProducts);
+                        }
+
                     </script>
                 </section>
 

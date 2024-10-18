@@ -1,17 +1,98 @@
 <!-- Sales Report Template -->
-{% extends "base.html" %}
+{% if not download_pdf %}
+    {% extends "base.html" %}
+{% endif %}
 
 {% block title %}Sales Report{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1 class="text-center display-4">Sales Report</h1>
 
-    <!-- Date Filter Form -->
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    table th, table td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+    .scrollable-table {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+    th, td {
+        padding: 12px;
+        vertical-align: top;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    /* Align numeric columns to the right for better formatting */
+    .right-align {
+        text-align: right;
+    }
+
+    @media print {
+        h1, h3 {
+            font-size: 16px;
+        }
+        table th, table td {
+            font-size: 12px;
+        }
+        .container {
+            margin-top: 0;
+        }
+    }
+
+    @media print {
+        .header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center display-4">
+        Sales Report for 
+        {% if filter_type == 'daily' %}
+            {{ filter_date }}  <!-- Already a formatted string, no need for strftime -->
+        {% elif filter_type == 'monthly' %}
+            the month of {{ filter_date }}  <!-- Already formatted as "October 2024" -->
+        {% elif filter_type == 'quarterly' %}
+            Q{{ ((selected_date.month - 1) // 3) + 1 }} {{ selected_date.year }}  <!-- Use selected_date for calculations -->
+        {% elif filter_type == 'yearly' %}
+            the year {{ filter_date }}  <!-- Already formatted as "2024" -->
+        {% endif %}
+    </h1>
+    
+    {% if not download_pdf %}
+    <!-- Handle different date formats for different filters -->
+    <a href="{{ url_for('sales_report', filter_type=filter_type, filter_date=filter_date, download_pdf='true') }}" class="btn btn-primary pdf-hide">
+        Download PDF
+    </a>
+
     <form method="GET" action="{{ url_for('sales_report') }}" class="mb-4">
         <div class="form-group">
             <label for="filter_date">Filter by Date:</label>
-            <input type="date" id="filter_date" name="filter_date" class="form-control" value="{{ request.args.get('filter_date', '') }}">
+            {% if filter_type == 'daily' %}
+                <input type="date" id="filter_date" name="filter_date" class="form-control" value="{{ filter_date or '' }}">
+            {% elif filter_type == 'monthly' %}
+                <input type="month" id="filter_date" name="filter_date" class="form-control" value="{{ filter_date or '' }}">
+            {% elif filter_type == 'yearly' %}
+                <input type="number" id="filter_date" name="filter_date" class="form-control" value="{{ filter_date or '' }}" min="1900" max="2100" step="1">
+            {% endif %}
         </div>
         <div class="form-group">
             <label for="filter_type">Filter Type:</label>
@@ -24,19 +105,29 @@
         </div>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
+    
+    
+    
+    {% endif %}
 
     <h3 style="font-size: 1.5em;"><strong>Total Profit: {{ total_revenue }}</strong></h3>
-
 
     <!-- Product Transactions Table -->
     <h3 class="mt-5">Product Transactions</h3>
     <div class="scrollable-table">
         <table class="table table-bordered">
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 10%;">
+                <col style="width: 20%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Total Price</th>
+                    <th class="right-align">Quantity</th>
+                    <th class="right-align">Total Price</th>
                     <th>User</th>
                     <th>Date</th>
                 </tr>
@@ -45,9 +136,9 @@
                 {% for transaction in product_transactions %}
                 <tr>
                     <td>{{ transaction.product.name if transaction.product else "No Product" }}</td>
-                    <td>{{ transaction.quantity }}</td>
-                    <td>{{ transaction.total_price }}</td>
-                    <td>{{ transaction.user.role }}</td>
+                    <td class="right-align">{{ transaction.quantity }}</td>
+                    <td class="right-align">{{ transaction.total_price }}</td>
+                    <td>{{ transaction.user.role if transaction.user else "Unknown" }}</td>
                     <td>{{ transaction.timestamp }}</td>
                 </tr>
                 {% endfor %}
@@ -59,11 +150,18 @@
     <h3 class="mt-5">Loading Transactions</h3>
     <div class="scrollable-table">
         <table class="table table-bordered">
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 10%;">
+                <col style="width: 20%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Service Provider</th>
-                    <th>Amount Loaded</th>
-                    <th>Total Price</th>
+                    <th class="right-align">Amount Loaded</th>
+                    <th class="right-align">Total Price</th>
                     <th>User</th>
                     <th>Date</th>
                 </tr>
@@ -72,8 +170,8 @@
                 {% for transaction in loading_transactions %}
                 <tr>
                     <td>{{ transaction.service_provider }}</td>
-                    <td>{{ transaction.amount_loaded }}</td>
-                    <td>{{ transaction.total_price }}</td>
+                    <td class="right-align">{{ transaction.amount_loaded }}</td>
+                    <td class="right-align">{{ transaction.total_price }}</td>
                     <td>{{ transaction.user.role }}</td>
                     <td>{{ transaction.timestamp }}</td>
                 </tr>
@@ -86,12 +184,19 @@
     <h3 class="mt-5">Print Transactions</h3>
     <div class="scrollable-table">
         <table class="table table-bordered">
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 10%;">
+                <col style="width: 20%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Service Type</th>
-                    <th>Pages</th>
-                    <th>Back-to-Back</th>
-                    <th>Total Price</th>
+                    <th class="right-align">Pages</th>
+                    <th class="right-align">Back-to-Back</th>
+                    <th class="right-align">Total Price</th>
                     <th>User</th>
                     <th>Date</th>
                 </tr>
@@ -100,9 +205,9 @@
                 {% for transaction in print_transactions %}
                 <tr>
                     <td>{{ transaction.print_service.service_type }}</td>
-                    <td>{{ transaction.pages }}</td>
-                    <td>{{ transaction.back_to_back }}</td>
-                    <td>{{ transaction.total_price }}</td>
+                    <td class="right-align">{{ transaction.pages }}</td>
+                    <td class="right-align">{{ transaction.back_to_back }}</td>
+                    <td class="right-align">{{ transaction.total_price }}</td>
                     <td>{{ transaction.user.role }}</td>
                     <td>{{ transaction.timestamp }}</td>
                 </tr>

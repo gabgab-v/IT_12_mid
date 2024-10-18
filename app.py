@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, abort, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, abort, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
@@ -7,6 +7,12 @@ from datetime import datetime, timedelta
 from sqlalchemy import extract, func
 import pytz
 from flask_migrate import Migrate
+import pdfkit
+import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG)  # You can change to INFO or ERROR as needed
+logger = logging.getLogger(__name__)
 
 PH_TZ = pytz.timezone('Asia/Manila')
 
@@ -238,13 +244,6 @@ class PaperType(db.Model):
     def __repr__(self):
         return f"PaperType('{self.size}', '{self.description}')"
 
-# class LoadBalance(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     service_provider = db.Column(db.String(100), nullable=False)  # e.g., 'Globe', 'Smart'
-#     balance = db.Column(db.Float, nullable=False)
-#     last_updated = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-
-
    
 # User loader function for Flask-Login
 @login_manager.user_loader
@@ -469,6 +468,7 @@ def search_products():
     search_name = request.args.get('search_name', '').strip()
     search_category = request.args.get('search_category', '').strip()
     search_brand = request.args.get('search_brand', '').strip()  # New brand filter
+    out_of_stock = request.args.get('out_of_stock', 'false') == 'true'
 
     query = Product.query.filter_by(is_voided=False, deleted=False)
 
@@ -478,6 +478,8 @@ def search_products():
         query = query.join(Category).filter(Category.name.ilike(f"%{search_category}%"))
     if search_brand:
         query = query.filter(Product.brand.ilike(f"%{search_brand}%"))  # Apply brand filter
+    if out_of_stock:
+        query = query.filter(Product.stock == 0)
 
     products = query.all()
 
@@ -758,58 +760,172 @@ def get_yearly_sales_with_revenue(selected_date):
     ).scalar() or 0
 
 
-
+# Sales Route
 # Sales Route
 @app.route('/sales_report', methods=['GET'])
 def sales_report():
     filter_type = request.args.get('filter_type', 'daily')  # Default to daily if no filter
     filter_date = request.args.get('filter_date')
+    download_pdf = request.args.get('download_pdf', 'false')  # Check if user wants to download the PDF
+
+    logger.debug(f"Filter Type: {filter_type}")
+    logger.debug(f"Filter Date: {filter_date}")
+    logger.debug(f"Download PDF: {download_pdf}")
+    logger.debug(f"Raw Filter Date Input: {filter_date}")
 
     # Parse filter_date if provided
-    if filter_date:
-        selected_date = datetime.strptime(filter_date, '%Y-%m-%d')
-        date_filter = selected_date.date()
+    # Parse filter_date if provided
+    if filter_date: 
+        try:
+            # General parsing for daily filter (or full dates)
+            selected_date = datetime.strptime(filter_date, '%Y-%m-%d')
+        except ValueError:
+            try:
+                # Monthly format parsing: Expecting only year and month
+                if filter_type == 'monthly':
+                    selected_date = datetime.strptime(filter_date, '%Y-%m')
+                    selected_date = selected_date.replace(day=1)  # Set day to 1st of the month
+                # Yearly format parsing: Expecting only year
+                elif filter_type == 'yearly':
+                    selected_date = datetime.strptime(filter_date, '%Y')
+                    selected_date = selected_date.replace(month=1, day=1)  # Set to 1st Jan of the year
+            except ValueError:
+                return "Invalid date format", 400
     else:
-        selected_date = datetime.today()
-        date_filter = selected_date.date()
+        # Use current PH timestamp as default if no date is provided
+        selected_date = current_ph_timestamp()
 
-    # Fetch detailed transactions for the selected date
-    product_transactions = Transaction.query.filter(
-        Transaction.is_loading == False,
-        Transaction.print_service_id == None,
-        func.date(Transaction.timestamp) == date_filter
-    ).all()
 
-    loading_transactions = Transaction.query.filter(
-        Transaction.is_loading == True,
-        func.date(Transaction.timestamp) == date_filter
-    ).all()
+    # Fetch detailed transactions for the selected date based on the filter_type
+    if filter_type == 'daily':
+        product_transactions = Transaction.query.filter(
+            Transaction.is_loading == False,
+            Transaction.print_service_id == None,
+            func.date(Transaction.timestamp) == selected_date.date()
+        ).all()
 
-    print_transactions = Transaction.query.filter(
-        Transaction.print_service_id.isnot(None),
-        func.date(Transaction.timestamp) == date_filter
-    ).all()
+        loading_transactions = Transaction.query.filter(
+            Transaction.is_loading == True,
+            func.date(Transaction.timestamp) == selected_date.date()
+        ).all()
+
+        print_transactions = Transaction.query.filter(
+            Transaction.print_service_id.isnot(None),
+            func.date(Transaction.timestamp) == selected_date.date()
+        ).all()
+
+    elif filter_type == 'monthly':
+        product_transactions = Transaction.query.filter(
+            Transaction.is_loading == False,
+            Transaction.print_service_id == None,
+            extract('month', Transaction.timestamp) == selected_date.month,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        loading_transactions = Transaction.query.filter(
+            Transaction.is_loading == True,
+            extract('month', Transaction.timestamp) == selected_date.month,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        print_transactions = Transaction.query.filter(
+            Transaction.print_service_id.isnot(None),
+            extract('month', Transaction.timestamp) == selected_date.month,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+    elif filter_type == 'quarterly':
+        current_quarter = (selected_date.month - 1) // 3 + 1
+        product_transactions = Transaction.query.filter(
+            Transaction.is_loading == False,
+            Transaction.print_service_id == None,
+            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        loading_transactions = Transaction.query.filter(
+            Transaction.is_loading == True,
+            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        print_transactions = Transaction.query.filter(
+            Transaction.print_service_id.isnot(None),
+            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+    elif filter_type == 'yearly':
+        product_transactions = Transaction.query.filter(
+            Transaction.is_loading == False,
+            Transaction.print_service_id == None,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        loading_transactions = Transaction.query.filter(
+            Transaction.is_loading == True,
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
+        print_transactions = Transaction.query.filter(
+            Transaction.print_service_id.isnot(None),
+            extract('year', Transaction.timestamp) == selected_date.year
+        ).all()
+
 
     # Apply the correct query based on filter_type to calculate total revenue
     if filter_type == 'daily':
         total_revenue = get_daily_sales_with_revenue(selected_date)
+        filter_display = selected_date.strftime('%Y-%m-%d')
     elif filter_type == 'monthly':
         total_revenue = get_monthly_sales_with_revenue(selected_date)
+        filter_display = selected_date.strftime('%B  %Y')  # Show "October 2024", for example
     elif filter_type == 'quarterly':
         total_revenue = get_quarterly_sales_with_revenue(selected_date)
+        current_quarter = (selected_date.month - 1) // 3 + 1
+        filter_display = f"Q{current_quarter} {selected_date.year}"  # Show "Q4 2024"
     elif filter_type == 'yearly':
         total_revenue = get_yearly_sales_with_revenue(selected_date)
+        filter_display = selected_date.strftime('%Y')  # Show "2024"
     else:
         total_revenue = 0
 
-    return render_template(
-        'sales_report.html', 
-        filter_type=filter_type, 
+    # Render the sales report page
+    rendered_html = render_template(
+        'sales_report.html',
+        filter_type=filter_type,
+        filter_date=filter_display,  # Pass formatted filter date as string here
         total_revenue=total_revenue,
         product_transactions=product_transactions,
         loading_transactions=loading_transactions,
-        print_transactions=print_transactions
+        print_transactions=print_transactions,
+        download_pdf=(download_pdf == 'true')
     )
+
+    # If user wants to download the PDF, generate and send the file
+    if download_pdf == 'true':
+        if filter_type == 'daily':
+            date_str = selected_date.strftime('%Y-%m-%d')
+            filename = f"sales_report_{date_str}.pdf"
+        elif filter_type == 'monthly':
+            date_str = selected_date.strftime('%B_%Y')
+            filename = f"sales_report_{date_str}.pdf"
+        elif filter_type == 'quarterly':
+            quarter = (selected_date.month - 1) // 3 + 1
+            year = selected_date.year
+            filename = f"sales_report_Q{quarter}_{year}.pdf"
+        elif filter_type == 'yearly':
+            year = selected_date.year
+            filename = f"sales_report_{year}.pdf"
+
+        pdf_path = os.path.join(os.getcwd(), filename)
+        pdfkit.from_string(rendered_html, pdf_path)
+        
+        return send_file(pdf_path, as_attachment=True, download_name=filename)
+
+    # If not downloading, just return the rendered HTML page
+    return rendered_html
+
 
 
 # Add Items
