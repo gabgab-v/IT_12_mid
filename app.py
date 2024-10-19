@@ -469,8 +469,9 @@ def manage_products():
 def search_products():
     search_name = request.args.get('search_name', '').strip()
     search_category = request.args.get('search_category', '').strip()
-    search_brand = request.args.get('search_brand', '').strip()  # New brand filter
+    search_brand = request.args.get('search_brand', '').strip()
     out_of_stock = request.args.get('out_of_stock', 'false') == 'true'
+    low_stock = request.args.get('low_stock', 'false') == 'true'
 
     query = Product.query.filter_by(is_voided=False, deleted=False)
 
@@ -479,9 +480,15 @@ def search_products():
     if search_category:
         query = query.join(Category).filter(Category.name.ilike(f"%{search_category}%"))
     if search_brand:
-        query = query.filter(Product.brand.ilike(f"%{search_brand}%"))  # Apply brand filter
-    if out_of_stock:
+        query = query.filter(Product.brand.ilike(f"%{search_brand}%"))
+
+    # Handle the filters
+    if out_of_stock and low_stock:
+        query = query.filter((Product.stock == 0) | (Product.stock <= 10))  # Example: <= 10 means "Low Stock"
+    elif out_of_stock:
         query = query.filter(Product.stock == 0)
+    elif low_stock:
+        query = query.filter(Product.stock <= 5)  # Example: <= 10 means "Low Stock"
 
     products = query.all()
 
@@ -490,7 +497,7 @@ def search_products():
             'id': product.id,
             'name': product.name,
             'category': product.category.name,
-            'brand': product.brand,  # Include brand
+            'brand': product.brand,
             'stock': product.stock,
             'price': product.price,
             'original_price': product.original_price,
@@ -499,6 +506,8 @@ def search_products():
     ]
 
     return jsonify(products_data)
+
+
 
 #FOR RESTOCK SERACH DISABLE THE ACTION BUTTON LEAVE THE RESTOCK ONLY
 @app.route('/search_products2', methods=['GET'])

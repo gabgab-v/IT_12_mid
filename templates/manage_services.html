@@ -67,14 +67,20 @@
                         {% endif %}
 
                         <!-- Search Form -->
-                        <form class="form-inline mb-3">
+                        <form class="form-inline mb-3" id="productSearchForm">
                             <input type="text" id="search_name" class="form-control mr-2" placeholder="Search by Name">
                             <input type="text" id="search_category" class="form-control mr-2" placeholder="Search by Category">
                             <input type="text" id="search_brand" class="form-control mr-2" placeholder="Search by Brand">
                             <div class="form-check ml-2">
                                 <input class="form-check-input" type="checkbox" id="out_of_stock_filter">
                                 <label class="form-check-label" for="out_of_stock_filter">
-                                    Out of Stock Only
+                                    Out of Stock
+                                </label>
+                            </div>
+                            <div class="form-check ml-2">
+                                <input class="form-check-input" type="checkbox" id="low_stock_filter">
+                                <label class="form-check-label" for="low_stock_filter">
+                                    Low Stock
                                 </label>
                             </div>
                         </form>
@@ -132,34 +138,42 @@
                             const searchCategory = document.getElementById('search_category').value;
                             const searchBrand = document.getElementById('search_brand').value;
                             const outOfStockOnly = document.getElementById('out_of_stock_filter') ? document.getElementById('out_of_stock_filter').checked : false;
-
-                            // Fetch products with the additional outOfStock filter
-                            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}&search_brand=${searchBrand}&out_of_stock=${outOfStockOnly}`)
+                            const lowStockOnly = document.getElementById('low_stock_filter') ? document.getElementById('low_stock_filter').checked : false;
+                    
+                            fetch(`/search_products?search_name=${searchName}&search_category=${searchCategory}&search_brand=${searchBrand}&out_of_stock=${outOfStockOnly}&low_stock=${lowStockOnly}`)
                                 .then(response => response.json())
                                 .then(data => {
                                     const tableBody = document.getElementById('products_table');
                                     tableBody.innerHTML = '';  // Clear current rows
-
+                    
                                     data.forEach(product => {
-                                        // Display 'Out of Stock' if stock is 0
-                                        const stockDisplay = product.stock === 0 ? 'Out of Stock' : product.stock;
+                                        let stockDisplay = '';
+                                        let stockClass = '';
+                    
+                                        // Determine stock status and CSS class
+                                        if (product.stock === 0) {
+                                            stockDisplay = 'Out of Stock';
+                                            stockClass = 'out-of-stock';
+                                        } else if (product.stock <= 5) { // Example: low stock is less than or equal to 5
+                                            stockDisplay = product.stock;
+                                            stockClass = 'low-stock';
+                                        } else {
+                                            stockDisplay = product.stock;
+                                        }
+                    
                                         const row = `
                                             <tr>
                                                 <td>${product.name}</td>
                                                 <td>${product.category}</td>
                                                 <td>${product.brand}</td>
-                                                <td>${stockDisplay}</td>
-                                                <td>${product.price}</td>
-                                                <td>${product.original_price}</td>
+                                                <td class="${stockClass}">${stockDisplay}</td>
+                                                <td>₱${product.price.toFixed(2)}</td>
+                                                <td>₱${product.original_price.toFixed(2)}</td>
                                                 <td>${product.expiration_date || 'N/A'}</td>
                                                 <td>
                                                     <a href="/edit_product/${product.id}" class="btn btn-warning btn-sm">Edit</a>
                                                     <form action="/delete_product/${product.id}" method="POST" style="display: inline;">
                                                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to archive this product?');">Remove</button>
-                                                    </form>
-                                                    <form action="/reduce_stock/${product.id}" method="POST" style="display: inline;">
-                                                        <input type="number" name="reduce_quantity" min="1" max="${product.stock}" placeholder="Qty" class="form-control form-control-sm d-inline-block w-50 mb-2">
-                                                        <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure you want to reduce the stock of this product?');">Void</button>
                                                     </form>
                                                 </td>
                                             </tr>
@@ -168,18 +182,22 @@
                                     });
                                 });
                         }
-
-                        // Add event listeners to call fetchFilteredProducts on input and checkbox change
+                    
+                        // Event listeners
                         document.getElementById('search_name').addEventListener('input', fetchFilteredProducts);
                         document.getElementById('search_category').addEventListener('input', fetchFilteredProducts);
                         document.getElementById('search_brand').addEventListener('input', fetchFilteredProducts);
-
-                        // Check if the Out of Stock filter exists before adding an event listener
+                    
                         if (document.getElementById('out_of_stock_filter')) {
                             document.getElementById('out_of_stock_filter').addEventListener('change', fetchFilteredProducts);
                         }
-
+                    
+                        if (document.getElementById('low_stock_filter')) {
+                            document.getElementById('low_stock_filter').addEventListener('change', fetchFilteredProducts);
+                        }
                     </script>
+                    
+                    
                 </section>
 
                 <!-- Manage Loading Services Section -->

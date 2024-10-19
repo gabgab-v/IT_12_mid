@@ -599,23 +599,34 @@ function removeLoadRow(rowIndex, totalPrice) {
 
 function handleCheckout(event) {
     const productTableBody = document.getElementById('productTableBody');
+    const amountPaid = document.getElementById('amountPaid').value;
+    
+    // Check if the cart is empty
     console.log("Checking if cart is empty.");
-
     if (productTableBody.children.length === 0) {
         alert("Your cart is empty. Please add items before checking out.");
         event.preventDefault();
         return false;
     }
 
+    // Check if amount paid is entered and valid
+    if (!amountPaid || amountPaid <= 0) {
+        alert("Please enter a valid amount paid.");
+        event.preventDefault();
+        return false;
+    }
+
     event.preventDefault();
-    console.log("Cart has items. Asking for receipt.");
-    
+    console.log("Cart has items and valid amount paid. Asking for receipt.");
+
+    // Ask if the user wants a receipt
     const wantsReceipt = confirm("Would you like a receipt?");
     console.log("User wants receipt:", wantsReceipt);
 
     if (wantsReceipt) {
         printReceipt();
 
+        // Delay submission to give time for the receipt to print
         setTimeout(() => {
             document.getElementById('checkoutForm').submit();
         }, 3000);
@@ -623,6 +634,7 @@ function handleCheckout(event) {
         document.getElementById('checkoutForm').submit();
     }
 }
+
 
 
 function printReceipt() {
