@@ -3,7 +3,9 @@
     {% extends "base.html" %}
 {% endif %}
 
-{% block title %}Sales Report{% endblock %}
+{% if not download_pdf %}
+    {% block title %}Sales Report{% endblock %}
+{% endif %}
 
 {% block content %}
 
@@ -33,6 +35,10 @@
     /* Align numeric columns to the right for better formatting */
     .right-align {
         text-align: right;
+    }
+    /* Prevent date column from wrapping text */
+    .nowrap {
+        white-space: nowrap;
     }
 
     @media print {
@@ -75,10 +81,12 @@
         {% elif filter_type == 'yearly' %}
             the year {{ filter_date }}  <!-- Already formatted as "2024" -->
         {% endif %}
+        in Rival Store
     </h1>
     
     {% if not download_pdf %}
     <!-- Handle different date formats for different filters -->
+    <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-0">Back to Dashboard</a>
     <a href="{{ url_for('sales_report', filter_type=filter_type, filter_date=filter_date, download_pdf='true') }}" class="btn btn-primary pdf-hide">
         Download PDF
     </a>
@@ -105,9 +113,6 @@
         </div>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    
-    
-    
     {% endif %}
 
     <h3 style="font-size: 1.5em;"><strong>Total Profit: {{ total_revenue }}</strong></h3>
@@ -129,7 +134,7 @@
                     <th class="right-align">Quantity</th>
                     <th class="right-align">Total Price</th>
                     <th>User</th>
-                    <th>Date</th>
+                    <th class="nowrap">Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -139,7 +144,7 @@
                     <td class="right-align">{{ transaction.quantity }}</td>
                     <td class="right-align">{{ transaction.total_price }}</td>
                     <td>{{ transaction.user.role if transaction.user else "Unknown" }}</td>
-                    <td>{{ transaction.timestamp }}</td>
+                    <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -163,7 +168,7 @@
                     <th class="right-align">Amount Loaded</th>
                     <th class="right-align">Total Price</th>
                     <th>User</th>
-                    <th>Date</th>
+                    <th class="nowrap">Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,7 +178,7 @@
                     <td class="right-align">{{ transaction.amount_loaded }}</td>
                     <td class="right-align">{{ transaction.total_price }}</td>
                     <td>{{ transaction.user.role }}</td>
-                    <td>{{ transaction.timestamp }}</td>
+                    <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -197,8 +202,7 @@
                     <th class="right-align">Pages</th>
                     <th class="right-align">Back-to-Back</th>
                     <th class="right-align">Total Price</th>
-                    <th>User</th>
-                    <th>Date</th>
+                    <th class="nowrap">Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -208,8 +212,7 @@
                     <td class="right-align">{{ transaction.pages }}</td>
                     <td class="right-align">{{ transaction.back_to_back }}</td>
                     <td class="right-align">{{ transaction.total_price }}</td>
-                    <td>{{ transaction.user.role }}</td>
-                    <td>{{ transaction.timestamp }}</td>
+                    <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

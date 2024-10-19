@@ -1,3 +1,4 @@
+import re
 from flask import Flask, render_template, redirect, url_for, flash, request, abort, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -10,6 +11,7 @@ from flask_migrate import Migrate
 import pdfkit
 import os
 import logging
+from dateutil import parser
 
 logging.basicConfig(level=logging.DEBUG)  # You can change to INFO or ERROR as needed
 logger = logging.getLogger(__name__)
@@ -773,29 +775,45 @@ def sales_report():
     logger.debug(f"Download PDF: {download_pdf}")
     logger.debug(f"Raw Filter Date Input: {filter_date}")
 
+    # Initialize selected_date to None first
+    selected_date = None
+
     # Parse filter_date if provided
-    # Parse filter_date if provided
-    if filter_date: 
+    if filter_date:
         try:
             # General parsing for daily filter (or full dates)
             selected_date = datetime.strptime(filter_date, '%Y-%m-%d')
         except ValueError:
             try:
-                # Monthly format parsing: Expecting only year and month
+                # Monthly format parsing: Expecting only year and month (or month name)
                 if filter_type == 'monthly':
-                    selected_date = datetime.strptime(filter_date, '%Y-%m')
+                    selected_date = parser.parse(filter_date)  # Parse with dateutil to handle month names
                     selected_date = selected_date.replace(day=1)  # Set day to 1st of the month
                 # Yearly format parsing: Expecting only year
                 elif filter_type == 'yearly':
                     selected_date = datetime.strptime(filter_date, '%Y')
                     selected_date = selected_date.replace(month=1, day=1)  # Set to 1st Jan of the year
-            except ValueError:
+                elif filter_type == 'quarterly':
+                # Add the quarterly parsing logic here
+                    quarter_match = re.match(r'(Q[1-4]) (\d{4})', filter_date)
+                    if quarter_match:
+                        quarter = int(quarter_match.group(1)[1])
+                        year = int(quarter_match.group(2))
+                        selected_date = datetime(year, 1 + (quarter - 1) * 3, 1)
+                    else:
+                        raise ValueError("Invalid quarter format")
+                # No parsing logic for quarterly as we derive it from the month
+            except (ValueError, parser.ParserError):
                 return "Invalid date format", 400
     else:
         # Use current PH timestamp as default if no date is provided
         selected_date = current_ph_timestamp()
 
+    # Ensure selected_date is assigned
+    if not selected_date:
+        return "Date not provided or could not be parsed", 400
 
+    # Continue with rendering or PDF generation logic...
     # Fetch detailed transactions for the selected date based on the filter_type
     if filter_type == 'daily':
         product_transactions = Transaction.query.filter(
@@ -836,22 +854,31 @@ def sales_report():
 
     elif filter_type == 'quarterly':
         current_quarter = (selected_date.month - 1) // 3 + 1
+        if current_quarter == 1:
+            start_month, end_month = 1, 3
+        elif current_quarter == 2:
+            start_month, end_month = 4, 6
+        elif current_quarter == 3:
+            start_month, end_month = 7, 9
+        else:
+            start_month, end_month = 10, 12
+
         product_transactions = Transaction.query.filter(
             Transaction.is_loading == False,
             Transaction.print_service_id == None,
-            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('month', Transaction.timestamp).between(start_month, end_month),
             extract('year', Transaction.timestamp) == selected_date.year
         ).all()
 
         loading_transactions = Transaction.query.filter(
             Transaction.is_loading == True,
-            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('month', Transaction.timestamp).between(start_month, end_month),
             extract('year', Transaction.timestamp) == selected_date.year
         ).all()
 
         print_transactions = Transaction.query.filter(
             Transaction.print_service_id.isnot(None),
-            (extract('month', Transaction.timestamp) - 1) // 3 + 1 == current_quarter,
+            extract('month', Transaction.timestamp).between(start_month, end_month),
             extract('year', Transaction.timestamp) == selected_date.year
         ).all()
 
@@ -872,14 +899,13 @@ def sales_report():
             extract('year', Transaction.timestamp) == selected_date.year
         ).all()
 
-
     # Apply the correct query based on filter_type to calculate total revenue
     if filter_type == 'daily':
         total_revenue = get_daily_sales_with_revenue(selected_date)
         filter_display = selected_date.strftime('%Y-%m-%d')
     elif filter_type == 'monthly':
         total_revenue = get_monthly_sales_with_revenue(selected_date)
-        filter_display = selected_date.strftime('%B  %Y')  # Show "October 2024", for example
+        filter_display = selected_date.strftime('%B %Y')  # Show "October 2024"
     elif filter_type == 'quarterly':
         total_revenue = get_quarterly_sales_with_revenue(selected_date)
         current_quarter = (selected_date.month - 1) // 3 + 1
@@ -890,16 +916,17 @@ def sales_report():
     else:
         total_revenue = 0
 
-    # Render the sales report page
+    # Render the sales report page or download the PDF
     rendered_html = render_template(
         'sales_report.html',
         filter_type=filter_type,
-        filter_date=filter_display,  # Pass formatted filter date as string here
+        filter_date=filter_display,
         total_revenue=total_revenue,
         product_transactions=product_transactions,
         loading_transactions=loading_transactions,
         print_transactions=print_transactions,
-        download_pdf=(download_pdf == 'true')
+        download_pdf=(download_pdf == 'true'),
+        selected_date=selected_date  # Pass selected_date to template
     )
 
     # If user wants to download the PDF, generate and send the file
@@ -920,13 +947,10 @@ def sales_report():
 
         pdf_path = os.path.join(os.getcwd(), filename)
         pdfkit.from_string(rendered_html, pdf_path)
-        
+
         return send_file(pdf_path, as_attachment=True, download_name=filename)
 
-    # If not downloading, just return the rendered HTML page
     return rendered_html
-
-
 
 # Add Items
 @app.route('/add_product', methods=['GET', 'POST'])
