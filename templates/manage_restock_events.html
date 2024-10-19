@@ -40,8 +40,8 @@
                     <td>{{ restock.id }}</td>
                     <td>{{ restock.product.name if restock.product else 'N/A' }}</td>
                     <td>{{ restock.product.category.name if restock.product and restock.product.category else 'N/A' }}</td>
-                    <td>{{ restock.restock_amount }}</td>
-                    <td>{{ restock.amount_spent }}</td>
+                    <td>{{ restock.restock_amount|int }}</td>
+                    <td>₱{{ "%.2f"|format(restock.amount_spent) }}</td>
                     <td>{{ restock.inventory_type }}</td>
                     <td>{{ restock.restock_date }}</td>
                 </tr>
@@ -84,8 +84,14 @@
 
                         <div class="form-group">
                             <label for="amount_spent">Amount Spent on Restock</label>
-                            <input type="number" class="form-control" id="amount_spent" name="amount_spent" placeholder="Enter amount spent on restock" required>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">₱</span>
+                                </div>
+                                <input type="number" class="form-control" id="amount_spent" name="amount_spent" placeholder="Enter amount spent on restock" required step="0.01">
+                            </div>
                         </div>
+                        
 
                         <!-- Ink Type Selection (hidden by default) -->
                         <div class="form-group" id="ink-type-field" style="display: none;">

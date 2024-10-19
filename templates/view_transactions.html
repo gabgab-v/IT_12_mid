@@ -50,7 +50,7 @@
                     
                         <td>{% if transaction.product %}{{ transaction.product.name }}{% else %}No Product{% endif %}</td>
                         <td>{{ transaction.quantity }}</td>
-                        <td>{{ transaction.total_price }}</td>
+                        <td>₱{{ "%.2f"|format(transaction.total_price) }}</td>
                         <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>
@@ -78,8 +78,8 @@
                     <tr>
                         
                         <td>{{ transaction.service_provider }}</td>
-                        <td>{{ transaction.amount_loaded }}</td>
-                        <td>{{ transaction.total_price }}</td>
+                        <td>{{ transaction.amount_loaded|int }}</td>
+                        <td>₱{{ "%.2f"|format(transaction.total_price) }}</td>
                         <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>
@@ -108,7 +108,7 @@
                         <td>{{ transaction.print_service.service_type }}</td> 
                         <td>{{ transaction.pages }}</td>
                         <td>{{ transaction.back_to_back }}</td>
-                        <td>{{ transaction.total_price }}</td>
+                        <td>₱{{ "%.2f"|format(transaction.total_price) }}</td>
                         <td>{{ transaction.user.role }}</td>
                         <td>{{ transaction.timestamp }}</td>
                     </tr>

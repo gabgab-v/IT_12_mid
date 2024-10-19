@@ -21,7 +21,7 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Manage Restock Products</h1>
-        <a href="{{ url_for('manage_services') }}" class="btn btn-secondary mb-3">Back to Manage Services</a>
+        <a href="{{ url_for('manage_restock_events') }}" class="btn btn-secondary mb-3">Back to Manage Restocks</a>
 
         <!-- Search Form -->
         <form class="form-inline mb-3">
@@ -59,8 +59,8 @@
                     <td class="{% if product.stock == 0 %}out-of-stock{% elif product.stock <= 5 %}low-stock{% endif %}">
                         {{ 'Out of Stock' if product.stock == 0 else product.stock }}
                     </td>                    
-                    <td>{{ product.price }}</td>
-                    <td>{{ product.original_price }}</td>
+                    <td>₱{{ "%.2f"|format(product.price) }}</td>
+                    <td>₱{{ "%.2f"|format(product.original_price) }}</td>
                     <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
                     <td>
                         {% if current_user.role == 'admin' or current_user.role == 'purchaser' %}

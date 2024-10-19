@@ -41,8 +41,8 @@
                 <tr>
                     <td>{{ restock.product.name }}</td>
                     <td>{{ restock.product.category.name }}</td>
-                    <td>{{ restock.restock_amount }}</td>
-                    <td>{{ restock.amount_spent }}</td>
+                    <td>{{ restock.restock_amount|int }}</td>
+                    <td>₱{{ "%.2f"|format(restock.amount_spent) }}</td>
                     <td>{{ restock.restock_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                 </tr>
                 {% endfor %}

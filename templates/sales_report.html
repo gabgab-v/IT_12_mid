@@ -8,6 +8,7 @@
 {% endif %}
 
 {% block content %}
+<meta charset="UTF-8">
 
 <style>
     table {
@@ -81,7 +82,9 @@
         {% elif filter_type == 'yearly' %}
             the year {{ filter_date }}  <!-- Already formatted as "2024" -->
         {% endif %}
+        {% if download_pdf %}
         in Rival Store
+        {% endif %}
     </h1>
     
     {% if not download_pdf %}
@@ -115,7 +118,8 @@
     </form>
     {% endif %}
 
-    <h3 style="font-size: 1.5em;"><strong>Total Profit: {{ total_revenue }}</strong></h3>
+    <h3 style="font-size: 1.5em;"><strong>Total Profit: ₱{{ "%.2f"|format(total_revenue) }}</strong></h3>
+
 
     <!-- Product Transactions Table -->
     <h3 class="mt-5">Product Transactions</h3>
@@ -142,7 +146,7 @@
                 <tr>
                     <td>{{ transaction.product.name if transaction.product else "No Product" }}</td>
                     <td class="right-align">{{ transaction.quantity }}</td>
-                    <td class="right-align">{{ transaction.total_price }}</td>
+                    <td class="right-align">₱{{ "%.2f"|format(transaction.total_price) }}</td>
                     <td>{{ transaction.user.role if transaction.user else "Unknown" }}</td>
                     <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
@@ -175,8 +179,8 @@
                 {% for transaction in loading_transactions %}
                 <tr>
                     <td>{{ transaction.service_provider }}</td>
-                    <td class="right-align">{{ transaction.amount_loaded }}</td>
-                    <td class="right-align">{{ transaction.total_price }}</td>
+                    <td class="right-align">{{ transaction.amount_loaded|int }}</td>
+                    <td class="right-align">₱{{ "%.2f"|format(transaction.total_price) }}</td>
                     <td>{{ transaction.user.role }}</td>
                     <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
@@ -211,7 +215,7 @@
                     <td>{{ transaction.print_service.service_type }}</td>
                     <td class="right-align">{{ transaction.pages }}</td>
                     <td class="right-align">{{ transaction.back_to_back }}</td>
-                    <td class="right-align">{{ transaction.total_price }}</td>
+                    <td class="right-align">₱{{ "%.2f"|format(transaction.total_price) }}</td>
                     <td class="nowrap">{{ transaction.timestamp }}</td>
                 </tr>
                 {% endfor %}

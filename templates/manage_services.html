@@ -55,6 +55,7 @@
                 <section id="products" class="mt-5">                                         
                     <div class="container mt-5">
                         <h1 class="text-center">Manage Products</h1>
+                        <a href="{{ url_for('another_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
                         {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
                         <a href="{{ url_for('add_product') }}" class="btn btn-secondary mb-3">Add Items</a>
                         {% endif %}
@@ -102,8 +103,8 @@
                                         {{ 'Out of Stock' if product.stock == 0 else product.stock }}
                                     </td>
                                     
-                                    <td>{{ product.price }}</td>
-                                    <td>{{ product.original_price }}</td>
+                                    <td>₱{{ "%.2f"|format(product.price) }}</td>
+                                    <td>₱{{ "%.2f"|format(product.original_price) }}</td>
                                     <td>{{ product.expiration_date if product.expiration_date else 'N/A' }}</td>
                                     <td>
                                         {% if current_user.role == 'admin' or current_user.role == 'inventory' %}
@@ -206,8 +207,8 @@
                             {% for restock in restocks %}
                             <tr>
                                 <td>{{ restock.id }}</td>
-                                <td>{{ restock.restock_amount }}</td>
-                                <td>{{ restock.amount_spent }}</td>
+                                <td>{{ restock.restock_amount|int }}</td>
+                                <td>₱{{ "%.2f"|format(restock.amount_spent) }}</td>
                                 <td>{{ restock.inventory_type }}</td>
                                 <td>{{ restock.restock_date }}</td>
                             </tr>
@@ -367,7 +368,7 @@
                                 <tr>
                                     <td>{{ service.id }}</td>
                                     <td>{{ service.service_type }}</td>
-                                    <td>{{ service.price_per_page }}</td>
+                                    <td>₱{{ "%.2f"|format(service.price_per_page) }}</td>
                                     <td>{{ service.timestamp }}</td>
                                 </tr>
                                 {% endfor %}
@@ -409,7 +410,7 @@
                                 <tr>
                                     <td>{{ ink.name }}</td>
                                     <td>{{ ink.stock }}</td>
-                                    <td>₱{{ ink.amount_spent }}</td>
+                                    <td>₱{{ "%.2f"|format(ink.amount_spent) }}</td>
                                     <td>{{ ink.last_restock_date }}</td>
                                 </tr>
                                 {% endfor %}
