@@ -636,7 +636,6 @@ function handleCheckout(event) {
 }
 
 
-
 function printReceipt() {
     // Get the necessary data from the page
     const totalAmount = document.getElementById('totalAmount').textContent;
@@ -644,7 +643,7 @@ function printReceipt() {
     const amountPaid = document.getElementById('amountPaid').value;
     const changeAmount = document.getElementById('changeAmount').value;
     const date = new Date();
-    
+
     // Format the date and time for the receipt
     const formattedDate = date.toLocaleDateString();
     const formattedTime = date.toLocaleTimeString();
@@ -659,7 +658,7 @@ function printReceipt() {
         const price = row.cells[1].textContent;
         const quantity = row.cells[2].textContent;
         const total = row.cells[3].textContent;
-        
+
         productTableContent += `
             <tr>
                 <td>${productName}</td>
@@ -692,11 +691,11 @@ function printReceipt() {
             </table>
             <hr>
             <p style="text-align: right;">Units: ${unitsCount}</p>
-            <p style="text-align: right;">Total Amount: <strong> ${totalAmount}</strong></p>
+            <p style="text-align: right;">Total Amount: <strong>${totalAmount}</strong></p>
             <p style="text-align: right;">Amount Paid: P ${amountPaid}</p>
             <p style="text-align: right;">Change: ${changeAmount}</p>
             <hr>
-            <p>Thank you for buying in us!</p>
+            <p>Thank you for buying from us!</p>
         </div>
     `;
 
@@ -712,12 +711,16 @@ function printReceipt() {
             </body>
         </html>
     `);
-    
-    // Trigger the print
+
+    // Close the document and focus on the new window
     printWindow.document.close();
     printWindow.focus();
+
+    // Trigger the print and delay the window close
     printWindow.print();
-    printWindow.close();
+    printWindow.onafterprint = () => {
+        printWindow.close();
+    };
 }
 
 
